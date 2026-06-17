@@ -1,0 +1,17 @@
+source "Kconfig.zephyr"
+
+menu "Slimbox BT settings"
+
+config SLIMBOX_BT_INPUT_MODE_DEFAULT
+    int "Default input mode"
+    range 1 2
+    default 1
+    help
+        1 = Stadia
+        2 = Switch
+
+config SLIMBOX_BT_INPUT_MODE_DYNAMIC
+    bool "Enable input mode switching"
+    default y
+
+endmenu

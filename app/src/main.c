@@ -47,12 +47,14 @@ static const struct gpio_dt_spec sys_button = GPIO_DT_SPEC_GET(DT_ALIAS(sys_butt
 
 #define CHK(X) ({ int err = X; if (err != 0) { LOG_ERR("%s returned %d (%s:%d)", #X, err, __FILE__, __LINE__); } err == 0; })
 
+#ifndef MANUFACTURER
+#define MANUFACTURER "Arasaka"
+#endif
+
 #define PM_DEVICE_RUNTIME_GET(node_id, prop, idx) CHK(pm_device_runtime_get(DEVICE_DT_GET(DT_PHANDLE_BY_IDX(node_id, prop, idx))));
 #define PM_DEVICE_RUNTIME_PUT(node_id, prop, idx) CHK(pm_device_runtime_put(DEVICE_DT_GET(DT_PHANDLE_BY_IDX(node_id, prop, idx))));
 
-#define REPORT_ID 3
 #define REPORT_ID_IDX 0
-#define REPORT_LEN 10
 
 #define DISCONNECTED_SLEEP_TIMEOUT K_SECONDS(60)
 #define CONNECTED_SLEEP_TIMEOUT K_SECONDS(600)
@@ -70,6 +72,58 @@ static const struct gpio_dt_spec sys_button = GPIO_DT_SPEC_GET(DT_ALIAS(sys_butt
 #endif
 
 static volatile bool keep_going = true;
+
+enum InputMode {
+    INPUT_MODE_UNKNOWN = 0,
+    INPUT_MODE_STADIA = 1,
+    INPUT_MODE_SWITCH = 2,
+};
+
+static enum InputMode input_mode = INPUT_MODE_UNKNOWN;
+
+#ifdef CONFIG_USBD_HID_SUPPORT
+const uint8_t* wired_report_descriptor;
+size_t wired_report_descriptor_length;
+size_t wired_report_size;
+uint8_t wired_report_id;
+#endif
+
+const uint8_t* bluetooth_report_map;
+size_t bluetooth_report_map_length;
+size_t bluetooth_report_size;
+uint8_t bluetooth_report_id;
+
+#define CONFIG_VERSION 1
+
+struct __attribute__((packed)) config_t {
+    uint8_t config_version;
+    uint8_t input_mode;
+};
+
+static struct config_t config;
+
+#define SETTINGS_KEY "slimbox-bt/config"
+
+static int load_config_cb(const char* key, size_t len, settings_read_cb read_cb, void* cb_arg, void* param) {
+    LOG_INF("");
+
+    struct config_t* my_config = (struct config_t*) param;
+    my_config->config_version = 0;
+
+    if (((key != NULL) && (key[0] != '\0')) ||
+        (len != sizeof(struct config_t))) {
+        return 0;
+    }
+
+    int bytes_read = read_cb(cb_arg, my_config, len);
+
+    if (bytes_read != sizeof(struct config_t)) {
+        my_config->config_version = 0;
+        return 0;
+    }
+
+    return 0;
+}
 
 enum LedMode {
     LED_OFF = 0,
@@ -145,7 +199,7 @@ static void set_led_mode(enum LedMode led_mode_) {
     }
 }
 
-struct __attribute__((packed)) report_t {
+struct __attribute__((packed)) report_stadia_t {
     uint8_t dpad;
     uint8_t capture : 1;
     uint8_t assistant : 1;
@@ -172,8 +226,44 @@ struct __attribute__((packed)) report_t {
     uint8_t extra_buttons;
 };
 
-static struct report_t report;
-static struct report_t prev_report;
+BUILD_ASSERT(sizeof(struct report_stadia_t) == 10, "wrong Stadia report size");
+
+struct __attribute__((packed)) report_switch_t {
+    uint8_t y : 1;
+    uint8_t b : 1;
+    uint8_t a : 1;
+    uint8_t x : 1;
+    uint8_t l : 1;
+    uint8_t r : 1;
+    uint8_t zl : 1;
+    uint8_t zr : 1;
+    uint8_t minus : 1;
+    uint8_t plus : 1;
+    uint8_t ls : 1;
+    uint8_t rs : 1;
+    uint8_t home : 1;
+    uint8_t capture : 1;
+    uint8_t padding1 : 2;
+    uint8_t dpad : 4;
+    uint8_t padding2 : 4;
+    uint8_t lx;
+    uint8_t ly;
+    uint8_t rx;
+    uint8_t ry;
+    uint8_t padding3;
+};
+
+BUILD_ASSERT(sizeof(struct report_switch_t) == 8, "wrong Switch report size");
+
+#define MAX_REPORT_SIZE MAX_FROM_LIST(sizeof(struct report_stadia_t), sizeof(struct report_switch_t))
+
+#ifdef CONFIG_USBD_HID_SUPPORT
+static uint8_t wired_report[MAX_REPORT_SIZE];
+static uint8_t prev_wired_report[MAX_REPORT_SIZE];
+#endif
+
+static uint8_t bluetooth_report[MAX_REPORT_SIZE];
+static uint8_t prev_bluetooth_report[MAX_REPORT_SIZE];
 
 static const uint8_t dpad_lut[] = { 0x0F, 0x06, 0x02, 0x0F, 0x00, 0x07, 0x01, 0x00, 0x04, 0x05, 0x03, 0x04, 0x0F, 0x06, 0x02, 0x0F };
 
@@ -255,7 +345,7 @@ static inline void reset_conn_state() {
 #endif
 }
 
-BT_HIDS_DEF(hids_obj, REPORT_LEN);
+BT_HIDS_DEF(hids_obj, MAX_REPORT_SIZE);
 
 static K_SEM_DEFINE(bt_event_sem, 0, 1);
 
@@ -277,6 +367,37 @@ static const struct bt_data ad[] = {
         bt_name,
         MIN(sizeof(CONFIG_BT_DEVICE_NAME) + 5 - 1, CONFIG_BT_DEVICE_NAME_MAX)),
 };
+
+// We have our own DIS implementation to be able to change VID/PID at runtime.
+
+struct __attribute__((packed)) dis_pnp_t {
+    uint8_t vid_src;
+    uint16_t vid;
+    uint16_t pid;
+    uint16_t ver;
+};
+
+static struct dis_pnp_t dis_pnp_id = {
+    .vid_src = 0x02,
+    .vid = 0x0000,
+    .pid = 0x0000,
+    .ver = 0x0100,
+};
+
+static ssize_t read_str(struct bt_conn* conn, const struct bt_gatt_attr* attr, void* buf, uint16_t len, uint16_t offset) {
+    return bt_gatt_attr_read(conn, attr, buf, len, offset, attr->user_data, strlen(attr->user_data));
+}
+
+static ssize_t read_pnp_id(struct bt_conn* conn, const struct bt_gatt_attr* attr, void* buf, uint16_t len, uint16_t offset) {
+    return bt_gatt_attr_read(conn, attr, buf, len, offset, &dis_pnp_id, sizeof(dis_pnp_id));
+}
+
+BT_GATT_SERVICE_DEFINE(
+    dis_svc,
+    BT_GATT_PRIMARY_SERVICE(BT_UUID_DIS),
+    BT_GATT_CHARACTERISTIC(BT_UUID_DIS_MODEL_NUMBER, BT_GATT_CHRC_READ, BT_GATT_PERM_READ, read_str, NULL, CONFIG_SOC),
+    BT_GATT_CHARACTERISTIC(BT_UUID_DIS_MANUFACTURER_NAME, BT_GATT_CHRC_READ, BT_GATT_PERM_READ, read_str, NULL, MANUFACTURER),
+    BT_GATT_CHARACTERISTIC(BT_UUID_DIS_PNP_ID, BT_GATT_CHRC_READ, BT_GATT_PERM_READ, read_pnp_id, NULL, NULL), );
 
 static struct bt_conn* active_conn = NULL;
 static struct k_spinlock conn_lock;
@@ -879,7 +1000,7 @@ static void set_bt_name() {
     bt_set_name(bt_name);
 }
 
-static uint8_t const report_map[] = {
+static uint8_t const report_descriptor_stadia[] = {
     0x05, 0x01,        // Usage Page (Generic Desktop Ctrls)
     0x09, 0x05,        // Usage (Game Pad)
     0xA1, 0x01,        // Collection (Application)
@@ -975,12 +1096,54 @@ static uint8_t const report_map[] = {
     0xC0,  // End Collection
 };
 
+static uint8_t const report_descriptor_switch[] = {
+    0x05, 0x01,        // Usage Page (Generic Desktop Ctrls)
+    0x09, 0x05,        // Usage (Game Pad)
+    0xA1, 0x01,        // Collection (Application)
+    0x15, 0x00,        //   Logical Minimum (0)
+    0x25, 0x01,        //   Logical Maximum (1)
+    0x35, 0x00,        //   Physical Minimum (0)
+    0x45, 0x01,        //   Physical Maximum (1)
+    0x75, 0x01,        //   Report Size (1)
+    0x95, 0x0E,        //   Report Count (14)
+    0x05, 0x09,        //   Usage Page (Button)
+    0x19, 0x01,        //   Usage Minimum (0x01)
+    0x29, 0x0E,        //   Usage Maximum (0x0E)
+    0x81, 0x02,        //   Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+    0x95, 0x02,        //   Report Count (2)
+    0x81, 0x01,        //   Input (Const,Array,Abs,No Wrap,Linear,Preferred State,No Null Position)
+    0x05, 0x01,        //   Usage Page (Generic Desktop Ctrls)
+    0x25, 0x07,        //   Logical Maximum (7)
+    0x46, 0x3B, 0x01,  //   Physical Maximum (315)
+    0x75, 0x04,        //   Report Size (4)
+    0x95, 0x01,        //   Report Count (1)
+    0x65, 0x14,        //   Unit (System: English Rotation, Length: Centimeter)
+    0x09, 0x39,        //   Usage (Hat switch)
+    0x81, 0x42,        //   Input (Data,Var,Abs,No Wrap,Linear,Preferred State,Null State)
+    0x65, 0x00,        //   Unit (None)
+    0x95, 0x01,        //   Report Count (1)
+    0x81, 0x01,        //   Input (Const,Array,Abs,No Wrap,Linear,Preferred State,No Null Position)
+    0x26, 0xFF, 0x00,  //   Logical Maximum (255)
+    0x46, 0xFF, 0x00,  //   Physical Maximum (255)
+    0x09, 0x30,        //   Usage (X)
+    0x09, 0x31,        //   Usage (Y)
+    0x09, 0x32,        //   Usage (Z)
+    0x09, 0x35,        //   Usage (Rz)
+    0x75, 0x08,        //   Report Size (8)
+    0x95, 0x04,        //   Report Count (4)
+    0x81, 0x02,        //   Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+    0x75, 0x08,        //   Report Size (8)
+    0x95, 0x01,        //   Report Count (1)
+    0x81, 0x01,        //   Input (Const,Array,Abs,No Wrap,Linear,Preferred State,No Null Position)
+    0xC0,              // End Collection
+};
+
 static void hid_init(void) {
     struct bt_hids_init_param hids_init_param = { 0 };
     struct bt_hids_inp_rep* hids_inp_rep;
 
-    hids_init_param.rep_map.data = report_map;
-    hids_init_param.rep_map.size = sizeof(report_map);
+    hids_init_param.rep_map.data = bluetooth_report_map;
+    hids_init_param.rep_map.size = bluetooth_report_map_length;
 
     hids_init_param.info.bcd_hid = 0x0101;
     hids_init_param.info.b_country_code = 0x00;
@@ -988,8 +1151,8 @@ static void hid_init(void) {
                                   BT_HIDS_NORMALLY_CONNECTABLE);
 
     hids_inp_rep = &hids_init_param.inp_rep_group_init.reports[0];
-    hids_inp_rep->size = sizeof(struct report_t);
-    hids_inp_rep->id = REPORT_ID;
+    hids_inp_rep->size = bluetooth_report_size;
+    hids_inp_rep->id = bluetooth_report_id;
     hids_init_param.inp_rep_group_init.cnt++;
 
     CHK(bt_hids_init(&hids_obj, &hids_init_param));
@@ -1016,14 +1179,51 @@ static void reset_to_bootloader() {
 #endif
 }
 
+static void report_init_stadia(uint8_t* report) {
+    struct report_stadia_t* report_ = (struct report_stadia_t*) report;
+    report_->dpad = dpad_lut[0];
+    report_->lx = 0x80;
+    report_->ly = 0x80;
+    report_->rx = 0x80;
+    report_->ry = 0x80;
+}
+
+static void report_init_switch(uint8_t* report) {
+    struct report_switch_t* report_ = (struct report_switch_t*) report;
+    report_->dpad = dpad_lut[0];
+    report_->lx = 0x80;
+    report_->ly = 0x80;
+    report_->rx = 0x80;
+    report_->ry = 0x80;
+}
+
 static void report_init() {
-    memset(&report, 0, sizeof(report));
-    report.dpad = 8;
-    report.lx = 0x80;
-    report.ly = 0x80;
-    report.rx = 0x80;
-    report.ry = 0x80;
-    memcpy(&prev_report, &report, sizeof(report));
+#ifdef CONFIG_USBD_HID_SUPPORT
+    memset(wired_report, 0, wired_report_size);
+#endif
+    memset(bluetooth_report, 0, bluetooth_report_size);
+    switch (input_mode) {
+        case INPUT_MODE_STADIA: {
+#ifdef CONFIG_USBD_HID_SUPPORT
+            report_init_stadia(wired_report);
+#endif
+            report_init_stadia(bluetooth_report);
+            break;
+        }
+        case INPUT_MODE_SWITCH: {
+#ifdef CONFIG_USBD_HID_SUPPORT
+            report_init_switch(wired_report);
+#endif
+            report_init_switch(bluetooth_report);
+            break;
+        }
+        default:
+            break;
+    }
+#ifdef CONFIG_USBD_HID_SUPPORT
+    memcpy(prev_wired_report, wired_report, wired_report_size);
+#endif
+    memcpy(prev_bluetooth_report, bluetooth_report, bluetooth_report_size);
 }
 
 #ifdef CONFIG_USBD_HID_SUPPORT
@@ -1032,10 +1232,10 @@ static K_SEM_DEFINE(hid_report_sem, 1, 1);
 
 const struct device* hid_dev = DEVICE_DT_GET_ONE(zephyr_hid_device);
 
-USBD_DEVICE_DEFINE(context, DEVICE_DT_GET(DT_NODELABEL(zephyr_udc0)), CONFIG_BT_DIS_PNP_VID, CONFIG_BT_DIS_PNP_PID);
+USBD_DEVICE_DEFINE(context, DEVICE_DT_GET(DT_NODELABEL(zephyr_udc0)), 0x0000, 0x0000);
 
 USBD_DESC_LANG_DEFINE(desc_lang);
-USBD_DESC_MANUFACTURER_DEFINE(desc_manufacturer, CONFIG_BT_DIS_MANUF_NAME_STR);
+USBD_DESC_MANUFACTURER_DEFINE(desc_manufacturer, MANUFACTURER);
 USBD_DESC_PRODUCT_DEFINE(desc_product, CONFIG_BT_DEVICE_NAME);
 USBD_DESC_SERIAL_NUMBER_DEFINE(desc_serial_number);
 
@@ -1045,7 +1245,7 @@ USBD_CONFIGURATION_DEFINE(fs_config, attributes, 50, NULL);  // 50*2 mA = 100 mA
 
 USBD_CONFIGURATION_DEFINE(hs_config, attributes, 50, NULL);  // 50*2 mA = 100 mA
 
-UDC_STATIC_BUF_DEFINE(usb_report, sizeof(report) + 1);
+UDC_STATIC_BUF_DEFINE(usb_report, MAX_REPORT_SIZE + 1);
 
 static void iface_ready(const struct device* dev, const bool ready) {
     LOG_INF("%d", ready);
@@ -1077,6 +1277,15 @@ static int get_report(const struct device* dev,
     return 0;
 }
 
+static int set_report(const struct device* dev, const uint8_t type, const uint8_t id, const uint16_t len, const uint8_t* const buf) {
+    LOG_HEXDUMP_DBG(buf, len, "");
+    return 0;
+}
+
+static void output_report(const struct device* dev, const uint16_t len, const uint8_t* const buf) {
+    LOG_HEXDUMP_DBG(buf, len, "");
+}
+
 static void input_report_done(const struct device* dev, const uint8_t* const report) {
     k_sem_give(&hid_report_sem);
 }
@@ -1084,6 +1293,8 @@ static void input_report_done(const struct device* dev, const uint8_t* const rep
 static struct hid_device_ops ops = {
     .iface_ready = iface_ready,
     .get_report = get_report,
+    .set_report = set_report,
+    .output_report = output_report,
     .input_report_done = input_report_done,
 };
 
@@ -1108,7 +1319,7 @@ static bool initialize_usb() {
         return false;
     }
 
-    if (!CHK(hid_device_register(hid_dev, report_map, sizeof(report_map), &ops))) {
+    if (!CHK(hid_device_register(hid_dev, wired_report_descriptor, wired_report_descriptor_length, &ops))) {
         return false;
     }
 
@@ -1198,6 +1409,12 @@ static void configure_buttons(void) {
         ((0 != (*button_port_states[BUTTON(name)] & BIT(DT_GPIO_PIN(DT_PATH(gamepad_buttons, name), gpios))))), \
         (0))
 
+static void read_all_gpio_ports() {
+    for (uint8_t i = 0; i < active_gpio_ports; i++) {
+        CHK(gpio_port_get(gpio_ports[i], &gpio_port_states[i]));
+    }
+}
+
 static void handle_buttons() {
     int sys_button_state = gpio_pin_get_dt(&sys_button);
     int64_t now = k_uptime_get();
@@ -1232,30 +1449,133 @@ static void handle_buttons() {
     }
     prev_sys_button_state = sys_button_state;
 
-    for (uint8_t i = 0; i < active_gpio_ports; i++) {
-        CHK(gpio_port_get(gpio_ports[i], &gpio_port_states[i]));
+    read_all_gpio_ports();
+}
+
+static void fill_out_report(uint8_t* report, bool wired) {
+    switch (input_mode) {
+        case INPUT_MODE_STADIA: {
+            struct report_stadia_t* report_ = (struct report_stadia_t*) report;
+
+            report_->menu = BUTTON_GET(start);
+            report_->options = BUTTON_GET(select);
+            report_->stadia = BUTTON_GET(home);
+            report_->capture = BUTTON_GET(button14);
+            report_->l3 = BUTTON_GET(l3);
+            report_->r3 = BUTTON_GET(r3);
+            report_->x = BUTTON_GET(west);
+            report_->y = BUTTON_GET(north);
+            report_->r1 = BUTTON_GET(r1);
+            report_->l1 = BUTTON_GET(l1);
+            report_->a = BUTTON_GET(south);
+            report_->b = BUTTON_GET(east);
+            report_->r2 = BUTTON_GET(r2);
+            report_->r2_axis = report_->r2 * 255;
+            report_->l2 = BUTTON_GET(l2);
+            report_->l2_axis = report_->l2 * 255;
+
+            int dpad = BUTTON_GET(dpad_left) | (BUTTON_GET(dpad_right) << 1) | (BUTTON_GET(dpad_up) << 2) | (BUTTON_GET(dpad_down) << 3);
+
+            report_->dpad = dpad_lut[dpad];
+
+            break;
+        }
+        case INPUT_MODE_SWITCH: {
+            struct report_switch_t* report_ = (struct report_switch_t*) report;
+
+            report_->b = BUTTON_GET(south);
+            report_->a = BUTTON_GET(east);
+            report_->y = BUTTON_GET(west);
+            report_->x = BUTTON_GET(north);
+            report_->minus = BUTTON_GET(select);
+            report_->plus = BUTTON_GET(start);
+            report_->home = BUTTON_GET(home);
+            report_->capture = BUTTON_GET(button14);
+            report_->l = BUTTON_GET(l1);
+            report_->r = BUTTON_GET(r1);
+            report_->zl = BUTTON_GET(l2);
+            report_->zr = BUTTON_GET(r2);
+            report_->ls = BUTTON_GET(l3);
+            report_->rs = BUTTON_GET(r3);
+
+            int dpad = BUTTON_GET(dpad_left) | (BUTTON_GET(dpad_right) << 1) | (BUTTON_GET(dpad_up) << 2) | (BUTTON_GET(dpad_down) << 3);
+
+            report_->dpad = dpad_lut[dpad];
+
+            break;
+        }
+        default:
+            break;
+    }
+}
+
+static void determine_input_mode() {
+#ifdef CONFIG_SLIMBOX_BT_INPUT_MODE_DYNAMIC
+    if (CHK(settings_load_subtree_direct(SETTINGS_KEY, load_config_cb, &config))) {
+        if (config.config_version == CONFIG_VERSION) {
+            input_mode = config.input_mode;
+            LOG_INF("saved input mode: %d", input_mode);
+        }
     }
 
-    report.menu = BUTTON_GET(start);
-    report.options = BUTTON_GET(select);
-    report.stadia = BUTTON_GET(home);
-    report.capture = BUTTON_GET(button14);
-    report.l3 = BUTTON_GET(l3);
-    report.r3 = BUTTON_GET(r3);
-    report.x = BUTTON_GET(west);
-    report.y = BUTTON_GET(north);
-    report.r1 = BUTTON_GET(r1);
-    report.l1 = BUTTON_GET(l1);
-    report.a = BUTTON_GET(south);
-    report.b = BUTTON_GET(east);
-    report.r2 = BUTTON_GET(r2);
-    report.r2_axis = report.r2 * 255;
-    report.l2 = BUTTON_GET(l2);
-    report.l2_axis = report.l2 * 255;
+    read_all_gpio_ports();
 
-    int dpad = BUTTON_GET(dpad_left) | (BUTTON_GET(dpad_right) << 1) | (BUTTON_GET(dpad_up) << 2) | (BUTTON_GET(dpad_down) << 3);
+    if (BUTTON_GET(south)) {
+        input_mode = INPUT_MODE_STADIA;
+    } else if (BUTTON_GET(east)) {
+        input_mode = INPUT_MODE_SWITCH;
+    }
+#endif
 
-    report.dpad = dpad_lut[dpad];
+    if (input_mode == INPUT_MODE_UNKNOWN) {
+        input_mode = CONFIG_SLIMBOX_BT_INPUT_MODE_DEFAULT;
+    }
+
+#ifdef CONFIG_SLIMBOX_BT_INPUT_MODE_DYNAMIC
+    config.config_version = CONFIG_VERSION;
+    config.input_mode = input_mode;
+
+    LOG_INF("final input_mode: %d", input_mode);
+
+    CHK(settings_save_one(SETTINGS_KEY, &config, sizeof(struct config_t)));
+#endif
+
+    switch (input_mode) {
+        case INPUT_MODE_STADIA:
+#ifdef CONFIG_USBD_HID_SUPPORT
+            usbd_device_set_vid(&context, 0x18D1);
+            usbd_device_set_pid(&context, 0x9400);
+            wired_report_descriptor = report_descriptor_stadia;
+            wired_report_descriptor_length = sizeof(report_descriptor_stadia);
+            wired_report_id = 3;
+            wired_report_size = sizeof(struct report_stadia_t);
+#endif
+            dis_pnp_id.vid = 0x18D1;
+            dis_pnp_id.pid = 0x9400;
+            bluetooth_report_map = report_descriptor_stadia;
+            bluetooth_report_map_length = sizeof(report_descriptor_stadia);
+            bluetooth_report_id = 3;
+            bluetooth_report_size = sizeof(struct report_stadia_t);
+            break;
+        case INPUT_MODE_SWITCH:
+#ifdef CONFIG_USBD_HID_SUPPORT
+            usbd_device_set_vid(&context, 0x0F0D);
+            usbd_device_set_pid(&context, 0x00C1);
+            wired_report_descriptor = report_descriptor_switch;
+            wired_report_descriptor_length = sizeof(report_descriptor_switch);
+            wired_report_id = 0;
+            wired_report_size = sizeof(struct report_switch_t);
+#endif
+            dis_pnp_id.vid = 0x0F0D;
+            dis_pnp_id.pid = 0x00C1;
+            bluetooth_report_map = report_descriptor_switch;
+            bluetooth_report_map_length = sizeof(report_descriptor_switch);
+            bluetooth_report_id = 0;
+            bluetooth_report_size = sizeof(struct report_switch_t);
+            break;
+        default:
+            break;
+    }
 }
 
 static void radio_notification_conn_cb(struct bt_conn* conn) {
@@ -1272,6 +1592,10 @@ int main() {
 #if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), keep_awake_devices) && defined(CONFIG_PM_DEVICE_RUNTIME)
     DT_FOREACH_PROP_ELEM(DT_PATH(zephyr_user), keep_awake_devices, PM_DEVICE_RUNTIME_GET)
 #endif
+
+    CHK(settings_subsys_init());
+    configure_buttons();
+    determine_input_mode();
 
     if (!CHK(bt_conn_auth_cb_register(&conn_auth_callbacks))) {
         return 0;
@@ -1300,7 +1624,6 @@ int main() {
     set_bt_name();
     configure_leds();
     advertising_start();
-    configure_buttons();
 
     while (keep_going) {
         // this makes logging work, but potentially stops us from achieving max polling rate
@@ -1310,25 +1633,33 @@ int main() {
         }
         handle_buttons();
 
-        if (memcmp(&prev_report, &report, sizeof(report))) {
-            if (usb_ready) {
+        if (usb_ready) {
 #ifdef CONFIG_USBD_HID_SUPPORT
+            fill_out_report(wired_report, true);
+            if (memcmp(prev_wired_report, wired_report, wired_report_size)) {
                 if (!k_sem_take(&hid_report_sem, K_NO_WAIT)) {
-                    usb_report[0] = REPORT_ID;
-                    memcpy(usb_report + 1, &report, sizeof(report));
-                    if (CHK(hid_device_submit_report(hid_dev, sizeof(report) + 1, usb_report))) {
-                        memcpy(&prev_report, &report, sizeof(report));
+                    uint8_t offset = 0;
+                    if (wired_report_id != 0) {
+                        usb_report[0] = wired_report_id;
+                        offset = 1;
+                    }
+                    memcpy(usb_report + offset, wired_report, wired_report_size);
+                    if (CHK(hid_device_submit_report(hid_dev, wired_report_size + offset, usb_report))) {
+                        memcpy(prev_wired_report, wired_report, wired_report_size);
                     } else {
                         k_sem_give(&hid_report_sem);
                     }
                 }
+            }
 #endif
-            } else {
+        } else {
+            fill_out_report(bluetooth_report, false);
+            if (memcmp(prev_bluetooth_report, bluetooth_report, bluetooth_report_size)) {
                 struct bt_conn* conn = get_active_conn();
                 if (conn != NULL) {
                     LOG_DBG("Sending report...");
-                    if (CHK(bt_hids_inp_rep_send(&hids_obj, conn, REPORT_ID_IDX, (uint8_t*) &report, REPORT_LEN, report_sent_cb))) {
-                        memcpy(&prev_report, &report, sizeof(report));
+                    if (CHK(bt_hids_inp_rep_send(&hids_obj, conn, REPORT_ID_IDX, bluetooth_report, bluetooth_report_size, report_sent_cb))) {
+                        memcpy(prev_bluetooth_report, bluetooth_report, bluetooth_report_size);
                     }
 #ifdef CONFIG_BT_SHORTER_CONNECTION_INTERVALS
                     // struct k_work_sync work_sync;
