@@ -9,6 +9,7 @@
 #include <string.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/hwinfo.h>
+#include <zephyr/drivers/usb/udc.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/logging/log_ctrl.h>
@@ -77,6 +78,7 @@ enum InputMode {
     INPUT_MODE_UNKNOWN = 0,
     INPUT_MODE_STADIA = 1,
     INPUT_MODE_SWITCH = 2,
+    INPUT_MODE_PC = 3,
 };
 
 static enum InputMode input_mode = INPUT_MODE_UNKNOWN;
@@ -255,7 +257,67 @@ struct __attribute__((packed)) report_switch_t {
 
 BUILD_ASSERT(sizeof(struct report_switch_t) == 8, "wrong Switch report size");
 
-#define MAX_REPORT_SIZE MAX_FROM_LIST(sizeof(struct report_stadia_t), sizeof(struct report_switch_t))
+struct __attribute__((packed)) report_xusb_t {
+    uint8_t type;
+    uint8_t length;
+    uint8_t dpad_up : 1;
+    uint8_t dpad_down : 1;
+    uint8_t dpad_left : 1;
+    uint8_t dpad_right : 1;
+    uint8_t start : 1;
+    uint8_t back : 1;
+    uint8_t lsb : 1;
+    uint8_t rsb : 1;
+    uint8_t lb : 1;
+    uint8_t rb : 1;
+    uint8_t guide : 1;
+    uint8_t padding1 : 1;
+    uint8_t a : 1;
+    uint8_t b : 1;
+    uint8_t x : 1;
+    uint8_t y : 1;
+    uint8_t lt;
+    uint8_t rt;
+    int16_t lx;
+    int16_t ly;
+    int16_t rx;
+    int16_t ry;
+    uint8_t padding2[6];
+};
+
+BUILD_ASSERT(sizeof(struct report_xusb_t) == 20, "wrong XUSB report size");
+
+struct __attribute__((packed)) report_xbox_t {
+    int16_t lx;
+    int16_t ly;
+    int16_t rx;
+    int16_t ry;
+    uint16_t lt;
+    uint16_t rt;
+    uint8_t dpad;
+    uint8_t a : 1;
+    uint8_t b : 1;
+    uint8_t padding1 : 1;
+    uint8_t x : 1;
+    uint8_t y : 1;
+    uint8_t padding2 : 1;
+    uint8_t l1 : 1;
+    uint8_t r1 : 1;
+    uint8_t padding3 : 1;
+    uint8_t padding4 : 1;
+    uint8_t view : 1;
+    uint8_t menu : 1;
+    uint8_t guide : 1;
+    uint8_t lsb : 1;
+    uint8_t rsb : 1;
+    uint8_t padding5 : 1;
+    uint8_t capture : 1;
+    uint8_t padding6 : 7;
+};
+
+BUILD_ASSERT(sizeof(struct report_xbox_t) == 16, "wrong Xbox report size");
+
+#define MAX_REPORT_SIZE MAX_FROM_LIST(sizeof(struct report_stadia_t), sizeof(struct report_switch_t), sizeof(struct report_xusb_t), sizeof(struct report_xbox_t))
 
 #ifdef CONFIG_USBD_HID_SUPPORT
 static uint8_t wired_report[MAX_REPORT_SIZE];
@@ -266,6 +328,8 @@ static uint8_t bluetooth_report[MAX_REPORT_SIZE];
 static uint8_t prev_bluetooth_report[MAX_REPORT_SIZE];
 
 static const uint8_t dpad_lut[] = { 0x0F, 0x06, 0x02, 0x0F, 0x00, 0x07, 0x01, 0x00, 0x04, 0x05, 0x03, 0x04, 0x0F, 0x06, 0x02, 0x0F };
+
+static const uint8_t dpad_lut_xbox[] = { 0x00, 0x07, 0x03, 0x00, 0x01, 0x08, 0x02, 0x01, 0x05, 0x06, 0x04, 0x05, 0x00, 0x07, 0x03, 0x00 };
 
 #define BUTTON(name) UTIL_CAT(button_, name)
 
@@ -1138,6 +1202,145 @@ static uint8_t const report_descriptor_switch[] = {
     0xC0,              // End Collection
 };
 
+static uint8_t const report_descriptor_xbox[] = {
+    0x05, 0x01,                    // Usage Page (Generic Desktop Ctrls)
+    0x09, 0x05,                    // Usage (Game Pad)
+    0xA1, 0x01,                    // Collection (Application)
+    0x85, 0x01,                    //   Report ID (1)
+    0x09, 0x01,                    //   Usage (Pointer)
+    0xA1, 0x00,                    //   Collection (Physical)
+    0x09, 0x30,                    //     Usage (X)
+    0x09, 0x31,                    //     Usage (Y)
+    0x15, 0x00,                    //     Logical Minimum (0)
+    0x27, 0xFF, 0xFF, 0x00, 0x00,  //     Logical Maximum (65534)
+    0x95, 0x02,                    //     Report Count (2)
+    0x75, 0x10,                    //     Report Size (16)
+    0x81, 0x02,                    //     Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+    0xC0,                          //   End Collection
+    0x09, 0x01,                    //   Usage (Pointer)
+    0xA1, 0x00,                    //   Collection (Physical)
+    0x09, 0x32,                    //     Usage (Z)
+    0x09, 0x35,                    //     Usage (Rz)
+    0x15, 0x00,                    //     Logical Minimum (0)
+    0x27, 0xFF, 0xFF, 0x00, 0x00,  //     Logical Maximum (65534)
+    0x95, 0x02,                    //     Report Count (2)
+    0x75, 0x10,                    //     Report Size (16)
+    0x81, 0x02,                    //     Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+    0xC0,                          //   End Collection
+    0x05, 0x02,                    //   Usage Page (Sim Ctrls)
+    0x09, 0xC5,                    //   Usage (Brake)
+    0x15, 0x00,                    //   Logical Minimum (0)
+    0x26, 0xFF, 0x03,              //   Logical Maximum (1023)
+    0x95, 0x01,                    //   Report Count (1)
+    0x75, 0x0A,                    //   Report Size (10)
+    0x81, 0x02,                    //   Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+    0x15, 0x00,                    //   Logical Minimum (0)
+    0x25, 0x00,                    //   Logical Maximum (0)
+    0x75, 0x06,                    //   Report Size (6)
+    0x95, 0x01,                    //   Report Count (1)
+    0x81, 0x03,                    //   Input (Const,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+    0x05, 0x02,                    //   Usage Page (Sim Ctrls)
+    0x09, 0xC4,                    //   Usage (Accelerator)
+    0x15, 0x00,                    //   Logical Minimum (0)
+    0x26, 0xFF, 0x03,              //   Logical Maximum (1023)
+    0x95, 0x01,                    //   Report Count (1)
+    0x75, 0x0A,                    //   Report Size (10)
+    0x81, 0x02,                    //   Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+    0x15, 0x00,                    //   Logical Minimum (0)
+    0x25, 0x00,                    //   Logical Maximum (0)
+    0x75, 0x06,                    //   Report Size (6)
+    0x95, 0x01,                    //   Report Count (1)
+    0x81, 0x03,                    //   Input (Const,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+    0x05, 0x01,                    //   Usage Page (Generic Desktop Ctrls)
+    0x09, 0x39,                    //   Usage (Hat switch)
+    0x15, 0x01,                    //   Logical Minimum (1)
+    0x25, 0x08,                    //   Logical Maximum (8)
+    0x35, 0x00,                    //   Physical Minimum (0)
+    0x46, 0x3B, 0x01,              //   Physical Maximum (315)
+    0x66, 0x14, 0x00,              //   Unit (System: English Rotation, Length: Centimeter)
+    0x75, 0x04,                    //   Report Size (4)
+    0x95, 0x01,                    //   Report Count (1)
+    0x81, 0x42,                    //   Input (Data,Var,Abs,No Wrap,Linear,Preferred State,Null State)
+    0x75, 0x04,                    //   Report Size (4)
+    0x95, 0x01,                    //   Report Count (1)
+    0x15, 0x00,                    //   Logical Minimum (0)
+    0x25, 0x00,                    //   Logical Maximum (0)
+    0x35, 0x00,                    //   Physical Minimum (0)
+    0x45, 0x00,                    //   Physical Maximum (0)
+    0x65, 0x00,                    //   Unit (None)
+    0x81, 0x03,                    //   Input (Const,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+    0x05, 0x09,                    //   Usage Page (Button)
+    0x19, 0x01,                    //   Usage Minimum (0x01)
+    0x29, 0x0F,                    //   Usage Maximum (0x0F)
+    0x15, 0x00,                    //   Logical Minimum (0)
+    0x25, 0x01,                    //   Logical Maximum (1)
+    0x75, 0x01,                    //   Report Size (1)
+    0x95, 0x0F,                    //   Report Count (15)
+    0x81, 0x02,                    //   Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+    0x15, 0x00,                    //   Logical Minimum (0)
+    0x25, 0x00,                    //   Logical Maximum (0)
+    0x75, 0x01,                    //   Report Size (1)
+    0x95, 0x01,                    //   Report Count (1)
+    0x81, 0x03,                    //   Input (Const,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+    0x05, 0x0C,                    //   Usage Page (Consumer)
+    0x0A, 0xB2, 0x00,              //   Usage (Record)
+    0x15, 0x00,                    //   Logical Minimum (0)
+    0x25, 0x01,                    //   Logical Maximum (1)
+    0x95, 0x01,                    //   Report Count (1)
+    0x75, 0x01,                    //   Report Size (1)
+    0x81, 0x02,                    //   Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+    0x15, 0x00,                    //   Logical Minimum (0)
+    0x25, 0x00,                    //   Logical Maximum (0)
+    0x75, 0x07,                    //   Report Size (7)
+    0x95, 0x01,                    //   Report Count (1)
+    0x81, 0x03,                    //   Input (Const,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+    0x05, 0x0F,                    //   Usage Page (PID Page)
+    0x09, 0x21,                    //   Usage (0x21)
+    0x85, 0x03,                    //   Report ID (3)
+    0xA1, 0x02,                    //   Collection (Logical)
+    0x09, 0x97,                    //     Usage (0x97)
+    0x15, 0x00,                    //     Logical Minimum (0)
+    0x25, 0x01,                    //     Logical Maximum (1)
+    0x75, 0x04,                    //     Report Size (4)
+    0x95, 0x01,                    //     Report Count (1)
+    0x91, 0x02,                    //     Output (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile)
+    0x15, 0x00,                    //     Logical Minimum (0)
+    0x25, 0x00,                    //     Logical Maximum (0)
+    0x75, 0x04,                    //     Report Size (4)
+    0x95, 0x01,                    //     Report Count (1)
+    0x91, 0x03,                    //     Output (Const,Var,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile)
+    0x09, 0x70,                    //     Usage (0x70)
+    0x15, 0x00,                    //     Logical Minimum (0)
+    0x25, 0x64,                    //     Logical Maximum (100)
+    0x75, 0x08,                    //     Report Size (8)
+    0x95, 0x04,                    //     Report Count (4)
+    0x91, 0x02,                    //     Output (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile)
+    0x09, 0x50,                    //     Usage (0x50)
+    0x66, 0x01, 0x10,              //     Unit (System: SI Linear, Time: Seconds)
+    0x55, 0x0E,                    //     Unit Exponent (-2)
+    0x15, 0x00,                    //     Logical Minimum (0)
+    0x26, 0xFF, 0x00,              //     Logical Maximum (255)
+    0x75, 0x08,                    //     Report Size (8)
+    0x95, 0x01,                    //     Report Count (1)
+    0x91, 0x02,                    //     Output (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile)
+    0x09, 0xA7,                    //     Usage (0xA7)
+    0x15, 0x00,                    //     Logical Minimum (0)
+    0x26, 0xFF, 0x00,              //     Logical Maximum (255)
+    0x75, 0x08,                    //     Report Size (8)
+    0x95, 0x01,                    //     Report Count (1)
+    0x91, 0x02,                    //     Output (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile)
+    0x65, 0x00,                    //     Unit (None)
+    0x55, 0x00,                    //     Unit Exponent (0)
+    0x09, 0x7C,                    //     Usage (0x7C)
+    0x15, 0x00,                    //     Logical Minimum (0)
+    0x26, 0xFF, 0x00,              //     Logical Maximum (255)
+    0x75, 0x08,                    //     Report Size (8)
+    0x95, 0x01,                    //     Report Count (1)
+    0x91, 0x02,                    //     Output (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile)
+    0xC0,                          //   End Collection
+    0xC0,                          // End Collection
+};
+
 static void hid_init(void) {
     struct bt_hids_init_param hids_init_param = { 0 };
     struct bt_hids_inp_rep* hids_inp_rep;
@@ -1197,6 +1400,20 @@ static void report_init_switch(uint8_t* report) {
     report_->ry = 0x80;
 }
 
+static void report_init_xusb(uint8_t* report) {
+    struct report_xusb_t* report_ = (struct report_xusb_t*) report;
+    report_->length = 20;
+}
+
+static void report_init_xbox(uint8_t* report) {
+    struct report_xbox_t* report_ = (struct report_xbox_t*) report;
+    report_->dpad = dpad_lut_xbox[0];
+    report_->lx = 0x8000;
+    report_->ly = 0x8000;
+    report_->rx = 0x8000;
+    report_->ry = 0x8000;
+}
+
 static void report_init() {
 #ifdef CONFIG_USBD_HID_SUPPORT
     memset(wired_report, 0, wired_report_size);
@@ -1215,6 +1432,13 @@ static void report_init() {
             report_init_switch(wired_report);
 #endif
             report_init_switch(bluetooth_report);
+            break;
+        }
+        case INPUT_MODE_PC: {
+#ifdef CONFIG_USBD_HID_SUPPORT
+            report_init_xusb(wired_report);
+#endif
+            report_init_xbox(bluetooth_report);
             break;
         }
         default:
@@ -1247,7 +1471,7 @@ USBD_CONFIGURATION_DEFINE(hs_config, attributes, 50, NULL);  // 50*2 mA = 100 mA
 
 UDC_STATIC_BUF_DEFINE(usb_report, MAX_REPORT_SIZE + 1);
 
-static void iface_ready(const struct device* dev, const bool ready) {
+static void set_usb_ready(const bool ready) {
     LOG_INF("%d", ready);
     struct bt_conn* conn = get_active_conn();
     usb_ready = ready;
@@ -1265,6 +1489,10 @@ static void iface_ready(const struct device* dev, const bool ready) {
     }
 
     release_conn(conn);
+}
+
+static void iface_ready(const struct device* dev, const bool ready) {
+    set_usb_ready(ready);
 }
 
 static int get_report(const struct device* dev,
@@ -1313,14 +1541,161 @@ static void usbd_msg_cb(struct usbd_context* const ctx, const struct usbd_msg* m
     }
 }
 
-static bool initialize_usb() {
-    if (!device_is_ready(hid_dev)) {
-        LOG_ERR("hid_dev not ready");
-        return false;
+// XUSB
+
+#define XUSB_EP_IN_MPS 20
+#define XUSB_EP_OUT_MPS 8
+
+static struct usb_if_descriptor xusb_desc_if0 = {
+    .bLength = sizeof(struct usb_if_descriptor),
+    .bDescriptorType = USB_DESC_INTERFACE,
+    .bInterfaceNumber = 0,  // will be patched by Zephyr
+    .bAlternateSetting = 0,
+    .bNumEndpoints = 2,
+    .bInterfaceClass = 0xFF,
+    .bInterfaceSubClass = 0x5D,
+    .bInterfaceProtocol = 0x01,
+    .iInterface = 0,
+};
+
+#define XUSB_PROPRIETARY_DESCRIPTOR_TYPE 0x21
+
+static struct usb_xusb_proprietary_descriptor {
+    uint8_t bLength;
+    uint8_t bDescriptorType;
+    uint8_t bData[15];
+} __packed xusb_desc_proprietary = {
+    .bLength = 17,
+    .bDescriptorType = XUSB_PROPRIETARY_DESCRIPTOR_TYPE,
+    .bData = { 0x00, 0x01, 0x01, 0x25, 0x81 /* will be patched by us */, 0x14, 0x00, 0x00, 0x00, 0x00, 0x13, 0x01 /* will be patched by us */, 0x08, 0x00, 0x00 },
+};
+
+static struct usb_ep_descriptor xusb_desc_if0_in_ep = {
+    .bLength = sizeof(struct usb_ep_descriptor),
+    .bDescriptorType = USB_DESC_ENDPOINT,
+    .bEndpointAddress = 0x81,  // will be patched by Zephyr
+    .bmAttributes = USB_EP_TYPE_INTERRUPT,
+    .wMaxPacketSize = sys_cpu_to_le16(32),
+    .bInterval = 1,
+};
+
+static struct usb_ep_descriptor xusb_desc_if0_out_ep = {
+    .bLength = sizeof(struct usb_ep_descriptor),
+    .bDescriptorType = USB_DESC_ENDPOINT,
+    .bEndpointAddress = 0x01,  // will be patched by Zephyr
+    .bmAttributes = USB_EP_TYPE_INTERRUPT,
+    .wMaxPacketSize = sys_cpu_to_le16(32),
+    .bInterval = 1,
+};
+
+static const struct usb_desc_header* xusb_fs_desc[] = {
+    (struct usb_desc_header*) &xusb_desc_if0,
+    (struct usb_desc_header*) &xusb_desc_proprietary,
+    (struct usb_desc_header*) &xusb_desc_if0_in_ep,
+    (struct usb_desc_header*) &xusb_desc_if0_out_ep,
+    NULL,
+};
+
+static void* xusb_get_desc(struct usbd_class_data* const c_data, const enum usbd_speed speed) {
+    return (void*) xusb_fs_desc;
+}
+
+static int xusb_request(struct usbd_class_data* const c_data, struct net_buf* buf, int err) {
+    struct udc_buf_info* bi = udc_get_buf_info(buf);
+
+    if (err) {
+        usbd_ep_buf_free(usbd_class_get_ctx(c_data), buf);
+        return 0;
     }
 
-    if (!CHK(hid_device_register(hid_dev, wired_report_descriptor, wired_report_descriptor_length, &ops))) {
-        return false;
+    if (bi->ep == xusb_desc_if0_out_ep.bEndpointAddress) {
+        LOG_HEXDUMP_DBG(buf->data, buf->len, "");
+
+        if (buf->len > 0) {
+            // ignore rumble for now
+        }
+
+        net_buf_reset(buf);
+        usbd_ep_enqueue(c_data, buf);
+    } else {
+        // IN transfer complete, free buffer
+        usbd_ep_buf_free(usbd_class_get_ctx(c_data), buf);
+        k_sem_give(&hid_report_sem);
+    }
+    return 0;
+}
+
+static int xusb_control_to_host(struct usbd_class_data* const c_data, const struct usb_setup_packet* setup, struct net_buf* buf) {
+    LOG_INF("");
+    uint16_t wValue = sys_le16_to_cpu(setup->wValue);
+    uint16_t wLength = sys_le16_to_cpu(setup->wLength);
+
+    if (setup->bRequest == USB_SREQ_GET_DESCRIPTOR) {
+        uint8_t desc_type = wValue >> 8;
+
+        if (desc_type == XUSB_PROPRIETARY_DESCRIPTOR_TYPE) {
+            size_t len = MIN(wLength, sizeof(xusb_desc_proprietary));
+            net_buf_add_mem(buf, &xusb_desc_proprietary, len);
+            return 0;
+        }
+    }
+
+    errno = -ENOTSUP;
+    return 0;
+}
+
+static int xusb_control_to_dev(struct usbd_class_data* const c_data, const struct usb_setup_packet* setup, const struct net_buf* buf) {
+    LOG_INF("");
+    errno = -ENOTSUP;
+    return 0;
+}
+
+static void xusb_enable(struct usbd_class_data* const c_data) {
+    set_usb_ready(true);
+
+    struct net_buf* buf = usbd_ep_buf_alloc(c_data, xusb_desc_if0_out_ep.bEndpointAddress, XUSB_EP_OUT_MPS);
+    if (buf) {
+        if (!CHK(usbd_ep_enqueue(c_data, buf))) {
+            usbd_ep_buf_free(usbd_class_get_ctx(c_data), buf);
+        }
+    }
+}
+
+static void xusb_disable(struct usbd_class_data* const c_data) {
+    set_usb_ready(false);
+}
+
+static int xusb_init(struct usbd_class_data* const c_data) {
+    LOG_INF("xusb if=%d ep_in=0x%02x ep_out=0x%02x", xusb_desc_if0.bInterfaceNumber, xusb_desc_if0_in_ep.bEndpointAddress, xusb_desc_if0_out_ep.bEndpointAddress);
+
+    xusb_desc_proprietary.bData[4] = xusb_desc_if0_in_ep.bEndpointAddress;
+    xusb_desc_proprietary.bData[11] = xusb_desc_if0_out_ep.bEndpointAddress;
+
+    return 0;
+}
+
+struct usbd_class_api xusb_api = {
+    .request = xusb_request,
+    .get_desc = xusb_get_desc,
+    .control_to_host = xusb_control_to_host,
+    .control_to_dev = xusb_control_to_dev,
+    .init = xusb_init,
+    .enable = xusb_enable,
+    .disable = xusb_disable,
+};
+
+USBD_DEFINE_CLASS(xusb, &xusb_api, NULL, NULL);
+
+static bool initialize_usb() {
+    if (input_mode != INPUT_MODE_PC) {
+        if (!device_is_ready(hid_dev)) {
+            LOG_ERR("hid_dev not ready");
+            return false;
+        }
+
+        if (!CHK(hid_device_register(hid_dev, wired_report_descriptor, wired_report_descriptor_length, &ops))) {
+            return false;
+        }
     }
 
     if (!CHK(usbd_add_descriptor(&context, &desc_lang))) {
@@ -1344,7 +1719,7 @@ static bool initialize_usb() {
             return false;
         }
 
-        if (!CHK(usbd_register_class(&context, "hid_0", USBD_SPEED_HS, 1))) {
+        if (!CHK(usbd_register_class(&context, (input_mode == INPUT_MODE_PC) ? "xusb" : "hid_0", USBD_SPEED_HS, 1))) {
             return false;
         }
 
@@ -1355,7 +1730,7 @@ static bool initialize_usb() {
         return false;
     }
 
-    if (!CHK(usbd_register_class(&context, "hid_0", USBD_SPEED_FS, 1))) {
+    if (!CHK(usbd_register_class(&context, (input_mode == INPUT_MODE_PC) ? "xusb" : "hid_0", USBD_SPEED_FS, 1))) {
         return false;
     }
 
@@ -1504,6 +1879,51 @@ static void fill_out_report(uint8_t* report, bool wired) {
 
             break;
         }
+        case INPUT_MODE_PC: {
+            if (wired) {
+#ifdef CONFIG_USBD_HID_SUPPORT
+                struct report_xusb_t* report_ = (struct report_xusb_t*) report;
+                report_->dpad_left = BUTTON_GET(dpad_left);
+                report_->dpad_right = BUTTON_GET(dpad_right);
+                report_->dpad_up = BUTTON_GET(dpad_up);
+                report_->dpad_down = BUTTON_GET(dpad_down);
+                report_->a = BUTTON_GET(south);
+                report_->b = BUTTON_GET(east);
+                report_->x = BUTTON_GET(west);
+                report_->y = BUTTON_GET(north);
+                report_->back = BUTTON_GET(select);
+                report_->start = BUTTON_GET(start);
+                report_->guide = BUTTON_GET(home);
+                report_->lb = BUTTON_GET(l1);
+                report_->rb = BUTTON_GET(r1);
+                report_->lsb = BUTTON_GET(l3);
+                report_->rsb = BUTTON_GET(r3);
+                report_->lt = BUTTON_GET(l2) * 255;
+                report_->rt = BUTTON_GET(r2) * 255;
+#endif
+            } else {
+                struct report_xbox_t* report_ = (struct report_xbox_t*) report;
+                report_->a = BUTTON_GET(south);
+                report_->b = BUTTON_GET(east);
+                report_->x = BUTTON_GET(west);
+                report_->y = BUTTON_GET(north);
+                report_->l1 = BUTTON_GET(l1);
+                report_->r1 = BUTTON_GET(r1);
+                report_->lsb = BUTTON_GET(l3);
+                report_->rsb = BUTTON_GET(r3);
+                report_->view = BUTTON_GET(select);
+                report_->menu = BUTTON_GET(start);
+                report_->guide = BUTTON_GET(home);
+                report_->capture = BUTTON_GET(button14);
+                report_->lt = BUTTON_GET(l2) * 1023;
+                report_->rt = BUTTON_GET(r2) * 1023;
+
+                int dpad = BUTTON_GET(dpad_left) | (BUTTON_GET(dpad_right) << 1) | (BUTTON_GET(dpad_up) << 2) | (BUTTON_GET(dpad_down) << 3);
+
+                report_->dpad = dpad_lut_xbox[dpad];
+            }
+            break;
+        }
         default:
             break;
     }
@@ -1524,6 +1944,8 @@ static void determine_input_mode() {
         input_mode = INPUT_MODE_STADIA;
     } else if (BUTTON_GET(east)) {
         input_mode = INPUT_MODE_SWITCH;
+    } else if (BUTTON_GET(west)) {
+        input_mode = INPUT_MODE_PC;
     }
 #endif
 
@@ -1572,6 +1994,19 @@ static void determine_input_mode() {
             bluetooth_report_map_length = sizeof(report_descriptor_switch);
             bluetooth_report_id = 0;
             bluetooth_report_size = sizeof(struct report_switch_t);
+            break;
+        case INPUT_MODE_PC:
+#ifdef CONFIG_USBD_HID_SUPPORT
+            usbd_device_set_vid(&context, 0x045E);
+            usbd_device_set_pid(&context, 0x028E);
+            wired_report_size = sizeof(struct report_xusb_t);
+#endif
+            dis_pnp_id.vid = 0x045E;
+            dis_pnp_id.pid = 0x0B13;
+            bluetooth_report_map = report_descriptor_xbox;
+            bluetooth_report_map_length = sizeof(report_descriptor_xbox);
+            bluetooth_report_id = 1;
+            bluetooth_report_size = sizeof(struct report_xbox_t);
             break;
         default:
             break;
@@ -1638,16 +2073,31 @@ int main() {
             fill_out_report(wired_report, true);
             if (memcmp(prev_wired_report, wired_report, wired_report_size)) {
                 if (!k_sem_take(&hid_report_sem, K_NO_WAIT)) {
-                    uint8_t offset = 0;
-                    if (wired_report_id != 0) {
-                        usb_report[0] = wired_report_id;
-                        offset = 1;
-                    }
-                    memcpy(usb_report + offset, wired_report, wired_report_size);
-                    if (CHK(hid_device_submit_report(hid_dev, wired_report_size + offset, usb_report))) {
-                        memcpy(prev_wired_report, wired_report, wired_report_size);
+                    if (input_mode == INPUT_MODE_PC) {
+                        struct net_buf* xbuf = usbd_ep_buf_alloc(&xusb, xusb_desc_if0_in_ep.bEndpointAddress, wired_report_size);
+                        if (xbuf) {
+                            net_buf_add_mem(xbuf, wired_report, wired_report_size);
+                            if (CHK(usbd_ep_enqueue(&xusb, xbuf))) {
+                                memcpy(prev_wired_report, wired_report, wired_report_size);
+                            } else {
+                                usbd_ep_buf_free(usbd_class_get_ctx(&xusb), xbuf);
+                                k_sem_give(&hid_report_sem);
+                            }
+                        } else {
+                            k_sem_give(&hid_report_sem);
+                        }
                     } else {
-                        k_sem_give(&hid_report_sem);
+                        uint8_t offset = 0;
+                        if (wired_report_id != 0) {
+                            usb_report[0] = wired_report_id;
+                            offset = 1;
+                        }
+                        memcpy(usb_report + offset, wired_report, wired_report_size);
+                        if (CHK(hid_device_submit_report(hid_dev, wired_report_size + offset, usb_report))) {
+                            memcpy(prev_wired_report, wired_report, wired_report_size);
+                        } else {
+                            k_sem_give(&hid_report_sem);
+                        }
                     }
                 }
             }
