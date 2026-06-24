@@ -6,6 +6,7 @@
         "artifact_final_name": "slimbox-bt-feather_nrf52840.uf2",
         "extra_params": {
             "EXTRA_CONF_FILE": [
+                "boards/bt.conf",
                 "boards/usb.conf"
             ],
             "EXTRA_DTC_OVERLAY_FILE": [
@@ -21,6 +22,7 @@
         "artifact_final_name": "flatbox-rev7-nrf52840.uf2",
         "extra_params": {
             "EXTRA_CONF_FILE": [
+                "boards/bt.conf",
                 "boards/flatbox_rev7.conf",
                 "boards/usb.conf"
             ],
@@ -38,6 +40,7 @@
         "artifact_final_name": "flatbox-rev7.1-nrf52840.uf2",
         "extra_params": {
             "EXTRA_CONF_FILE": [
+                "boards/bt.conf",
                 "boards/flatbox_rev7.1.conf",
                 "boards/usb.conf"
             ],
@@ -55,6 +58,7 @@
         "artifact_final_name": "flatbox-rev7-nrf54l15.hex",
         "extra_params": {
             "EXTRA_CONF_FILE": [
+                "boards/bt.conf",
                 "boards/flatbox_rev7.conf"
             ],
             "EXTRA_DTC_OVERLAY_FILE": [
@@ -70,6 +74,7 @@
         "artifact_final_name": "flatbox-rev7.1-nrf54l15.hex",
         "extra_params": {
             "EXTRA_CONF_FILE": [
+                "boards/bt.conf",
                 "boards/flatbox_rev7.1.conf"
             ],
             "EXTRA_DTC_OVERLAY_FILE": [
@@ -84,6 +89,7 @@
         "artifact_final_name": "slimbox-bt-xiao_nrf52840.uf2",
         "extra_params": {
             "EXTRA_CONF_FILE": [
+                "boards/bt.conf",
                 "boards/usb.conf"
             ],
             "EXTRA_DTC_OVERLAY_FILE": [
@@ -98,6 +104,9 @@
         "artifact_built_name": "merged.hex",
         "artifact_final_name": "slimbox-bt-xiao_nrf54l15.hex",
         "extra_params": {
+            "EXTRA_CONF_FILE": [
+                "boards/bt.conf"
+            ],
             "EXTRA_DTC_OVERLAY_FILE": [
                 "boards/xiao_mapping.overlay"
             ]
@@ -111,6 +120,7 @@
         "artifact_final_name": "slimbox-bt-xiao_nrf54l15-otadfu.hex",
         "extra_params": {
             "EXTRA_CONF_FILE": [
+                "boards/bt.conf",
                 "boards/ota_dfu.conf"
             ],
             "EXTRA_DTC_OVERLAY_FILE": [
@@ -131,6 +141,7 @@
         "artifact_final_name": "slimbox-bt-nice_nano.uf2",
         "extra_params": {
             "EXTRA_CONF_FILE": [
+                "boards/bt.conf",
                 "boards/usb.conf"
             ],
             "EXTRA_DTC_OVERLAY_FILE": [
@@ -145,6 +156,9 @@
         "artifact_built_name": "merged.hex",
         "artifact_final_name": "slimbox-bt-holyiot_25008.hex",
         "extra_params": {
+            "EXTRA_CONF_FILE": [
+                "boards/bt.conf"
+            ],
             "EXTRA_DTC_OVERLAY_FILE": [
                 "boards/holyiot_25008_mapping.overlay"
             ]
@@ -158,6 +172,7 @@
         "artifact_final_name": "slimbox-bt-holyiot_25008-otadfu.hex",
         "extra_params": {
             "EXTRA_CONF_FILE": [
+                "boards/bt.conf",
                 "boards/ota_dfu.conf"
             ],
             "EXTRA_DTC_OVERLAY_FILE": [
@@ -177,6 +192,9 @@
         "artifact_built_name": "merged.hex",
         "artifact_final_name": "slimbox-bt-holyiot_25055.hex",
         "extra_params": {
+            "EXTRA_CONF_FILE": [
+                "boards/bt.conf"
+            ],
             "EXTRA_DTC_OVERLAY_FILE": [
                 "boards/holyiot_25055_mapping.overlay"
             ]
@@ -190,6 +208,7 @@
         "artifact_final_name": "slimbox-bt-holyiot_25055-otadfu.hex",
         "extra_params": {
             "EXTRA_CONF_FILE": [
+                "boards/bt.conf",
                 "boards/ota_dfu.conf"
             ],
             "EXTRA_DTC_OVERLAY_FILE": [
@@ -209,6 +228,9 @@
         "artifact_built_name": "merged.hex",
         "artifact_final_name": "slimbox-bt-nrf52dk.hex",
         "extra_params": {
+            "EXTRA_CONF_FILE": [
+                "boards/bt.conf"
+            ],
             "EXTRA_DTC_OVERLAY_FILE": [
                 "boards/nrf52dk_mapping.overlay"
             ]
@@ -221,6 +243,7 @@
         "artifact_final_name": "slimbox-bt-nrf54lm20dk.hex",
         "extra_params": {
             "EXTRA_CONF_FILE": [
+                "boards/bt.conf",
                 "boards/usb.conf"
             ],
             "EXTRA_DTC_OVERLAY_FILE": [

@@ -31,6 +31,7 @@
 #include <zephyr/usb/usbd.h>
 #endif
 
+#ifdef CONFIG_BT
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
@@ -41,6 +42,7 @@
 #include <bluetooth/services/hids.h>
 #include <zephyr/bluetooth/services/bas.h>
 #include <zephyr/bluetooth/services/dis.h>
+#endif
 
 LOG_MODULE_REGISTER(gamepad, LOG_LEVEL_DBG);
 
@@ -50,6 +52,14 @@ static const struct gpio_dt_spec sys_button = GPIO_DT_SPEC_GET(DT_ALIAS(sys_butt
 
 #ifndef MANUFACTURER
 #define MANUFACTURER "Arasaka"
+#endif
+
+#ifndef PRODUCT
+#ifdef CONFIG_BT_DEVICE_NAME
+#define PRODUCT CONFIG_BT_DEVICE_NAME
+#else
+#define PRODUCT "Slimbox BT"
+#endif
 #endif
 
 #define PM_DEVICE_RUNTIME_GET(node_id, prop, idx) CHK(pm_device_runtime_get(DEVICE_DT_GET(DT_PHANDLE_BY_IDX(node_id, prop, idx))));
@@ -63,6 +73,8 @@ static const struct gpio_dt_spec sys_button = GPIO_DT_SPEC_GET(DT_ALIAS(sys_butt
 #define SYS_BUTTON_LONG_PRESS_MS 3000
 #define SYS_BUTTON_VERY_LONG_PRESS_MS 10000
 
+#ifdef CONFIG_BT
+
 #define SUPERVISION_TIMEOUT_10MS 100
 #define RADIO_NOTIFICATION_DISTANCE_US DT_PROP_OR(DT_PATH(zephyr_user), radio_notification_distance_us, 500)
 
@@ -70,6 +82,8 @@ static const struct gpio_dt_spec sys_button = GPIO_DT_SPEC_GET(DT_ALIAS(sys_butt
 #define CONNECTION_INTERVAL_MIN_US DT_PROP_OR(DT_PATH(zephyr_user), connection_interval_min_us, 1000)
 #define IDLE_TIMEOUT K_SECONDS(60)
 #define IDLE_SUBRATE_FACTOR 10
+#endif
+
 #endif
 
 static volatile bool keep_going = true;
@@ -90,10 +104,12 @@ size_t wired_report_size;
 uint8_t wired_report_id;
 #endif
 
+#ifdef CONFIG_BT
 const uint8_t* bluetooth_report_map;
 size_t bluetooth_report_map_length;
 size_t bluetooth_report_size;
 uint8_t bluetooth_report_id;
+#endif
 
 #define CONFIG_VERSION 1
 
@@ -324,8 +340,10 @@ static uint8_t wired_report[MAX_REPORT_SIZE];
 static uint8_t prev_wired_report[MAX_REPORT_SIZE];
 #endif
 
+#ifdef CONFIG_BT
 static uint8_t bluetooth_report[MAX_REPORT_SIZE];
 static uint8_t prev_bluetooth_report[MAX_REPORT_SIZE];
+#endif
 
 static const uint8_t dpad_lut[] = { 0x0F, 0x06, 0x02, 0x0F, 0x00, 0x07, 0x01, 0x00, 0x04, 0x05, 0x03, 0x04, 0x0F, 0x06, 0x02, 0x0F };
 
@@ -359,6 +377,24 @@ static int active_gpio_ports = 0;
 #ifdef CONFIG_BUILD_OUTPUT_UF2
 static const struct device* gpregret_dev = DEVICE_DT_GET(DT_NODELABEL(gpregret1));
 #endif
+
+static int prev_sys_button_state = 0;
+static int64_t sys_button_pressed_at;
+static bool sys_button_very_long_press_handled = false;
+
+static bool usb_ready = false;
+
+static void sleep_work_fn(struct k_work* work) {
+    if (usb_ready) {
+        LOG_INF("USB connected, not sleeping.");
+        return;
+    }
+
+    keep_going = false;
+}
+static K_WORK_DELAYABLE_DEFINE(sleep_work, sleep_work_fn);
+
+#ifdef CONFIG_BT
 
 enum ConnState {
     STATE_UNKNOWN = 0,
@@ -467,12 +503,6 @@ static struct bt_conn* active_conn = NULL;
 static struct k_spinlock conn_lock;
 static bool try_directed;
 
-static int prev_sys_button_state = 0;
-static int64_t sys_button_pressed_at;
-static bool sys_button_very_long_press_handled = false;
-
-static bool usb_ready = false;
-
 static inline struct bt_conn* get_active_conn() {
     k_spinlock_key_t key = k_spin_lock(&conn_lock);
     struct bt_conn* conn = active_conn ? bt_conn_ref(active_conn) : NULL;
@@ -485,16 +515,6 @@ static inline void release_conn(struct bt_conn* conn) {
         bt_conn_unref(conn);
     }
 }
-
-static void sleep_work_fn(struct k_work* work) {
-    if (usb_ready) {
-        LOG_INF("USB connected, not sleeping.");
-        return;
-    }
-
-    keep_going = false;
-}
-static K_WORK_DELAYABLE_DEFINE(sleep_work, sleep_work_fn);
 
 static void bond_find(const struct bt_bond_info* info, void* user_data) {
     bt_addr_le_copy(user_data, &info->addr);
@@ -1064,6 +1084,40 @@ static void set_bt_name() {
     bt_set_name(bt_name);
 }
 
+static void hid_init(void) {
+    struct bt_hids_init_param hids_init_param = { 0 };
+    struct bt_hids_inp_rep* hids_inp_rep;
+
+    hids_init_param.rep_map.data = bluetooth_report_map;
+    hids_init_param.rep_map.size = bluetooth_report_map_length;
+
+    hids_init_param.info.bcd_hid = 0x0101;
+    hids_init_param.info.b_country_code = 0x00;
+    hids_init_param.info.flags = (BT_HIDS_REMOTE_WAKE |
+                                  BT_HIDS_NORMALLY_CONNECTABLE);
+
+    hids_inp_rep = &hids_init_param.inp_rep_group_init.reports[0];
+    hids_inp_rep->size = bluetooth_report_size;
+    hids_inp_rep->id = bluetooth_report_id;
+    hids_init_param.inp_rep_group_init.cnt++;
+
+    CHK(bt_hids_init(&hids_obj, &hids_init_param));
+}
+
+static void report_sent_cb(struct bt_conn* conn, void* user_data) {
+    LOG_DBG("");
+}
+
+static void radio_notification_conn_cb(struct bt_conn* conn) {
+    k_sem_give(&bt_event_sem);
+}
+
+static const struct bt_radio_notification_conn_cb radio_notification_callbacks = {
+    .prepare = radio_notification_conn_cb,
+};
+
+#endif  // CONFIG_BT
+
 static uint8_t const report_descriptor_stadia[] = {
     0x05, 0x01,        // Usage Page (Generic Desktop Ctrls)
     0x09, 0x05,        // Usage (Game Pad)
@@ -1341,30 +1395,6 @@ static uint8_t const report_descriptor_xbox[] = {
     0xC0,                          // End Collection
 };
 
-static void hid_init(void) {
-    struct bt_hids_init_param hids_init_param = { 0 };
-    struct bt_hids_inp_rep* hids_inp_rep;
-
-    hids_init_param.rep_map.data = bluetooth_report_map;
-    hids_init_param.rep_map.size = bluetooth_report_map_length;
-
-    hids_init_param.info.bcd_hid = 0x0101;
-    hids_init_param.info.b_country_code = 0x00;
-    hids_init_param.info.flags = (BT_HIDS_REMOTE_WAKE |
-                                  BT_HIDS_NORMALLY_CONNECTABLE);
-
-    hids_inp_rep = &hids_init_param.inp_rep_group_init.reports[0];
-    hids_inp_rep->size = bluetooth_report_size;
-    hids_inp_rep->id = bluetooth_report_id;
-    hids_init_param.inp_rep_group_init.cnt++;
-
-    CHK(bt_hids_init(&hids_obj, &hids_init_param));
-}
-
-static void report_sent_cb(struct bt_conn* conn, void* user_data) {
-    LOG_DBG("");
-}
-
 static void reset_to_bootloader() {
 #ifdef CONFIG_BUILD_OUTPUT_UF2
     if (!device_is_ready(gpregret_dev)) {
@@ -1418,27 +1448,35 @@ static void report_init() {
 #ifdef CONFIG_USBD_HID_SUPPORT
     memset(wired_report, 0, wired_report_size);
 #endif
+#ifdef CONFIG_BT
     memset(bluetooth_report, 0, bluetooth_report_size);
+#endif
     switch (input_mode) {
         case INPUT_MODE_STADIA: {
 #ifdef CONFIG_USBD_HID_SUPPORT
             report_init_stadia(wired_report);
 #endif
+#ifdef CONFIG_BT
             report_init_stadia(bluetooth_report);
+#endif
             break;
         }
         case INPUT_MODE_SWITCH: {
 #ifdef CONFIG_USBD_HID_SUPPORT
             report_init_switch(wired_report);
 #endif
+#ifdef CONFIG_BT
             report_init_switch(bluetooth_report);
+#endif
             break;
         }
         case INPUT_MODE_PC: {
 #ifdef CONFIG_USBD_HID_SUPPORT
             report_init_xusb(wired_report);
 #endif
+#ifdef CONFIG_BT
             report_init_xbox(bluetooth_report);
+#endif
             break;
         }
         default:
@@ -1447,7 +1485,9 @@ static void report_init() {
 #ifdef CONFIG_USBD_HID_SUPPORT
     memcpy(prev_wired_report, wired_report, wired_report_size);
 #endif
+#ifdef CONFIG_BT
     memcpy(prev_bluetooth_report, bluetooth_report, bluetooth_report_size);
+#endif
 }
 
 #ifdef CONFIG_USBD_HID_SUPPORT
@@ -1460,7 +1500,7 @@ USBD_DEVICE_DEFINE(context, DEVICE_DT_GET(DT_NODELABEL(zephyr_udc0)), 0x0000, 0x
 
 USBD_DESC_LANG_DEFINE(desc_lang);
 USBD_DESC_MANUFACTURER_DEFINE(desc_manufacturer, MANUFACTURER);
-USBD_DESC_PRODUCT_DEFINE(desc_product, CONFIG_BT_DEVICE_NAME);
+USBD_DESC_PRODUCT_DEFINE(desc_product, PRODUCT);
 USBD_DESC_SERIAL_NUMBER_DEFINE(desc_serial_number);
 
 static const uint8_t attributes = 0;
@@ -1473,8 +1513,9 @@ UDC_STATIC_BUF_DEFINE(usb_report, MAX_REPORT_SIZE + 1);
 
 static void set_usb_ready(const bool ready) {
     LOG_INF("%d", ready);
-    struct bt_conn* conn = get_active_conn();
     usb_ready = ready;
+#ifdef CONFIG_BT
+    struct bt_conn* conn = get_active_conn();
     if (usb_ready) {
         set_led_mode(LED_OFF);
         if (conn != NULL) {
@@ -1489,6 +1530,7 @@ static void set_usb_ready(const bool ready) {
     }
 
     release_conn(conn);
+#endif
 }
 
 static void iface_ready(const struct device* dev, const bool ready) {
@@ -1806,7 +1848,9 @@ static void handle_buttons() {
                 set_status_led(false);
                 reset_to_bootloader();
             } else {
+#ifdef CONFIG_BT
                 k_work_submit(&clear_bonds_work);
+#endif
             }
         } else if (duration > SYS_BUTTON_LONG_PRESS_MS) {
             if (!usb_ready) {
@@ -1902,6 +1946,7 @@ static void fill_out_report(uint8_t* report, bool wired) {
                 report_->rt = BUTTON_GET(r2) * 255;
 #endif
             } else {
+#ifdef CONFIG_BT
                 struct report_xbox_t* report_ = (struct report_xbox_t*) report;
                 report_->a = BUTTON_GET(south);
                 report_->b = BUTTON_GET(east);
@@ -1921,6 +1966,7 @@ static void fill_out_report(uint8_t* report, bool wired) {
                 int dpad = BUTTON_GET(dpad_left) | (BUTTON_GET(dpad_right) << 1) | (BUTTON_GET(dpad_up) << 2) | (BUTTON_GET(dpad_down) << 3);
 
                 report_->dpad = dpad_lut_xbox[dpad];
+#endif
             }
             break;
         }
@@ -1972,12 +2018,14 @@ static void determine_input_mode() {
             wired_report_id = 3;
             wired_report_size = sizeof(struct report_stadia_t);
 #endif
+#ifdef CONFIG_BT
             dis_pnp_id.vid = 0x18D1;
             dis_pnp_id.pid = 0x9400;
             bluetooth_report_map = report_descriptor_stadia;
             bluetooth_report_map_length = sizeof(report_descriptor_stadia);
             bluetooth_report_id = 3;
             bluetooth_report_size = sizeof(struct report_stadia_t);
+#endif
             break;
         case INPUT_MODE_SWITCH:
 #ifdef CONFIG_USBD_HID_SUPPORT
@@ -1988,12 +2036,14 @@ static void determine_input_mode() {
             wired_report_id = 0;
             wired_report_size = sizeof(struct report_switch_t);
 #endif
+#ifdef CONFIG_BT
             dis_pnp_id.vid = 0x0F0D;
             dis_pnp_id.pid = 0x00C1;
             bluetooth_report_map = report_descriptor_switch;
             bluetooth_report_map_length = sizeof(report_descriptor_switch);
             bluetooth_report_id = 0;
             bluetooth_report_size = sizeof(struct report_switch_t);
+#endif
             break;
         case INPUT_MODE_PC:
 #ifdef CONFIG_USBD_HID_SUPPORT
@@ -2001,25 +2051,19 @@ static void determine_input_mode() {
             usbd_device_set_pid(&context, 0x028E);
             wired_report_size = sizeof(struct report_xusb_t);
 #endif
+#ifdef CONFIG_BT
             dis_pnp_id.vid = 0x045E;
             dis_pnp_id.pid = 0x0B13;
             bluetooth_report_map = report_descriptor_xbox;
             bluetooth_report_map_length = sizeof(report_descriptor_xbox);
             bluetooth_report_id = 1;
             bluetooth_report_size = sizeof(struct report_xbox_t);
+#endif
             break;
         default:
             break;
     }
 }
-
-static void radio_notification_conn_cb(struct bt_conn* conn) {
-    k_sem_give(&bt_event_sem);
-}
-
-static const struct bt_radio_notification_conn_cb radio_notification_callbacks = {
-    .prepare = radio_notification_conn_cb,
-};
 
 int main() {
     LOG_INF("Slimbox BT");
@@ -2031,7 +2075,9 @@ int main() {
     CHK(settings_subsys_init());
     configure_buttons();
     determine_input_mode();
+    report_init();
 
+#ifdef CONFIG_BT
     if (!CHK(bt_conn_auth_cb_register(&conn_auth_callbacks))) {
         return 0;
     }
@@ -2040,8 +2086,9 @@ int main() {
         return 0;
     }
 
-    report_init();
     hid_init();
+#endif
+
 #ifdef CONFIG_USBD_HID_SUPPORT
     if (!initialize_usb()) {
         LOG_ERR("initialize_usb() failed");
@@ -2049,6 +2096,9 @@ int main() {
     }
 #endif
 
+    configure_leds();
+
+#ifdef CONFIG_BT
     if (!CHK(bt_enable(NULL))) {
         return 0;
     }
@@ -2057,15 +2107,17 @@ int main() {
 
     settings_load();
     set_bt_name();
-    configure_leds();
     advertising_start();
+#endif
 
     while (keep_going) {
         // this makes logging work, but potentially stops us from achieving max polling rate
         // k_sleep(K_USEC(1));
+#ifdef CONFIG_BT
         if (!usb_ready) {
             k_sem_take(&bt_event_sem, K_USEC(10000));
         }
+#endif
         handle_buttons();
 
         if (usb_ready) {
@@ -2103,6 +2155,7 @@ int main() {
             }
 #endif
         } else {
+#ifdef CONFIG_BT
             fill_out_report(bluetooth_report, false);
             if (memcmp(prev_bluetooth_report, bluetooth_report, bluetooth_report_size)) {
                 struct bt_conn* conn = get_active_conn();
@@ -2123,9 +2176,11 @@ int main() {
                 }
                 release_conn(conn);
             }
+#endif
         }
     }
 
+#ifdef CONFIG_BT
     struct bt_conn* conn = get_active_conn();
     if (conn != NULL) {
         CHK(bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN));
@@ -2135,6 +2190,7 @@ int main() {
     release_conn(conn);
 
     CHK(bt_disable());
+#endif
 
 #if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), keep_awake_devices) && defined(CONFIG_PM_DEVICE_RUNTIME)
     DT_FOREACH_PROP_ELEM(DT_PATH(zephyr_user), keep_awake_devices, PM_DEVICE_RUNTIME_PUT)
