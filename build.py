@@ -6,30 +6,52 @@ import sys
 with open(sys.argv[1], "r") as f:
     builds = json.load(f)
 
+sdks = set()
+
+for b in builds:
+    sdks.add(b["sdk"])
+
 print(
     """#!/bin/bash
 
-if [[ $# -eq 0 || "$1" != "vatican-cameos" ]]; then
-    echo "This script clobbers the parent directory. It's mostly meant to be used from inside a GitHub workflow. If you're sure you know what you're doing, run it with a 'vatican-cameos' parameter." >&2
-    exit 1
-fi
-
 set -x -e -u -o pipefail
 
-west init -l .
-west update -o=--depth=1 -n
+if [ -z "${SDK_PATH_PREFIX:-}" ]; then
+    SDK_PATH_PREFIX=./sdk
+fi
 
-mkdir artifacts
+if [ -z "${BUILD_PATH_PREFIX:-}" ]; then
+    BUILD_PATH_PREFIX=./build
+fi
+
+if [ -z "${ARTIFACTS_PATH:-}" ]; then
+    ARTIFACTS_PATH=./artifacts
+fi
+
+mkdir -p "${BUILD_PATH_PREFIX}"
+
+mkdir -p "${ARTIFACTS_PATH}"
 """
 )
 
+for sdk in sdks:
+    print(
+        f"""mkdir -p "${{SDK_PATH_PREFIX}}"/{sdk}/manifest
+cp west-{sdk}.yml "${{SDK_PATH_PREFIX}}"/{sdk}/manifest/west.yml
+west init -l "${{SDK_PATH_PREFIX}}"/{sdk}/manifest
+ZEPHYR_BASE=`realpath "${{SDK_PATH_PREFIX}}"/{sdk}/zephyr` west update -o=--depth=1 -n
+"""
+    )
+
 for b in builds:
     prefix = "#" if b.get("disabled", False) else ""
-    extra_params = " ".join(f'-D{param}="{" ".join(values)}"' for param, values in b['extra_params'].items())
-    print(
-        f'{prefix}west build -d build-{b["name"]} -b {b["board"]} app -- -DBOARD_ROOT=${{PWD}}/app {extra_params}'
+    extra_params = " ".join(
+        f'-D{param}="{" ".join(values)}"' for param, values in b["extra_params"].items()
     )
     print(
-        f'{prefix}cp build-{b["name"]}/{b["artifact_built_name"]} artifacts/{b["artifact_final_name"]}'
+        f'{prefix}ZEPHYR_BASE=`realpath "${{SDK_PATH_PREFIX}}"/{b["sdk"]}/zephyr` west build -p -d "${{BUILD_PATH_PREFIX}}"/{b["name"]} -b {b["board"]} app -- -DBOARD_ROOT="${{PWD}}"/app {extra_params}'
+    )
+    print(
+        f'{prefix}cp "${{BUILD_PATH_PREFIX}}"/{b["name"]}/{b["artifact_built_name"]} "${{ARTIFACTS_PATH}}"/{b["artifact_final_name"]}'
     )
     print()

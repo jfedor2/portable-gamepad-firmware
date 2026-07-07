@@ -1,3 +1,4 @@
 build.sh
-build-*
+build
+sdk
 artifacts

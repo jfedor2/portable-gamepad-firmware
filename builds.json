@@ -1,6 +1,7 @@
 [
     {
         "name": "adafruit_feather_nrf52840",
+        "sdk": "ncs",
         "board": "adafruit_feather_nrf52840/nrf52840/uf2",
         "artifact_built_name": "app/zephyr/zephyr.uf2",
         "artifact_final_name": "slimbox-bt-feather_nrf52840.uf2",
@@ -17,6 +18,7 @@
     },
     {
         "name": "flatbox-rev7-nrf52840",
+        "sdk": "ncs",
         "board": "xiao_ble",
         "artifact_built_name": "app/zephyr/zephyr.uf2",
         "artifact_final_name": "flatbox-rev7-nrf52840.uf2",
@@ -35,6 +37,7 @@
     },
     {
         "name": "flatbox-rev7.1-nrf52840",
+        "sdk": "ncs",
         "board": "xiao_ble",
         "artifact_built_name": "app/zephyr/zephyr.uf2",
         "artifact_final_name": "flatbox-rev7.1-nrf52840.uf2",
@@ -53,6 +56,7 @@
     },
     {
         "name": "flatbox-rev7-nrf54l15",
+        "sdk": "ncs",
         "board": "xiao_nrf54l15/nrf54l15/cpuapp",
         "artifact_built_name": "merged.hex",
         "artifact_final_name": "flatbox-rev7-nrf54l15.hex",
@@ -69,6 +73,7 @@
     },
     {
         "name": "flatbox-rev7.1-nrf54l15",
+        "sdk": "ncs",
         "board": "xiao_nrf54l15/nrf54l15/cpuapp",
         "artifact_built_name": "merged.hex",
         "artifact_final_name": "flatbox-rev7.1-nrf54l15.hex",
@@ -84,6 +89,7 @@
     },
     {
         "name": "seeed_xiao_nrf52840",
+        "sdk": "ncs",
         "board": "xiao_ble",
         "artifact_built_name": "app/zephyr/zephyr.uf2",
         "artifact_final_name": "slimbox-bt-xiao_nrf52840.uf2",
@@ -100,6 +106,7 @@
     },
     {
         "name": "seeed_xiao_nrf54l15",
+        "sdk": "ncs",
         "board": "xiao_nrf54l15/nrf54l15/cpuapp",
         "artifact_built_name": "merged.hex",
         "artifact_final_name": "slimbox-bt-xiao_nrf54l15.hex",
@@ -114,6 +121,7 @@
     },
     {
         "name": "seeed_xiao_nrf54l15-otadfu",
+        "sdk": "ncs",
         "disabled": true,
         "board": "xiao_nrf54l15/nrf54l15/cpuapp",
         "artifact_built_name": "merged.hex",
@@ -136,6 +144,7 @@
     },
     {
         "name": "nice_nano",
+        "sdk": "ncs",
         "board": "nice_nano",
         "artifact_built_name": "app/zephyr/zephyr.uf2",
         "artifact_final_name": "slimbox-bt-nice_nano.uf2",
@@ -152,6 +161,7 @@
     },
     {
         "name": "holyiot_25008",
+        "sdk": "ncs",
         "board": "holyiot_25008/nrf54l15/cpuapp",
         "artifact_built_name": "merged.hex",
         "artifact_final_name": "slimbox-bt-holyiot_25008.hex",
@@ -166,6 +176,7 @@
     },
     {
         "name": "holyiot_25008-otadfu",
+        "sdk": "ncs",
         "disabled": true,
         "board": "holyiot_25008/nrf54l15/cpuapp",
         "artifact_built_name": "merged.hex",
@@ -188,6 +199,7 @@
     },
     {
         "name": "holyiot_25055",
+        "sdk": "ncs",
         "board": "holyiot_25055/nrf54l05/cpuapp",
         "artifact_built_name": "merged.hex",
         "artifact_final_name": "slimbox-bt-holyiot_25055.hex",
@@ -202,6 +214,7 @@
     },
     {
         "name": "holyiot_25055-otadfu",
+        "sdk": "ncs",
         "disabled": true,
         "board": "holyiot_25055/nrf54l05/cpuapp",
         "artifact_built_name": "merged.hex",
@@ -224,6 +237,7 @@
     },
     {
         "name": "nrf52dk",
+        "sdk": "ncs",
         "board": "nrf52dk/nrf52832",
         "artifact_built_name": "merged.hex",
         "artifact_final_name": "slimbox-bt-nrf52dk.hex",
@@ -238,6 +252,7 @@
     },
     {
         "name": "nrf54lm20dk",
+        "sdk": "ncs",
         "board": "nrf54lm20dk/nrf54lm20a/cpuapp",
         "artifact_built_name": "merged.hex",
         "artifact_final_name": "slimbox-bt-nrf54lm20dk.hex",
