@@ -21,11 +21,6 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/types.h>
 
-#ifdef CONFIG_BUILD_OUTPUT_UF2
-#include <zephyr/drivers/retained_mem.h>
-#include <zephyr/sys/reboot.h>
-#endif
-
 #ifdef CONFIG_USBD_HID_SUPPORT
 #include <zephyr/usb/class/usbd_hid.h>
 #include <zephyr/usb/usbd.h>
@@ -43,6 +38,8 @@
 #include <zephyr/bluetooth/services/bas.h>
 #include <zephyr/bluetooth/services/dis.h>
 #endif
+
+#include "bootloader.h"
 
 LOG_MODULE_REGISTER(gamepad, LOG_LEVEL_DBG);
 
@@ -373,10 +370,6 @@ static const struct device* gpio_ports[NUM_GPIO_PORTS];
 static gpio_port_value_t gpio_port_states[NUM_GPIO_PORTS];
 
 static int active_gpio_ports = 0;
-
-#ifdef CONFIG_BUILD_OUTPUT_UF2
-static const struct device* gpregret_dev = DEVICE_DT_GET(DT_NODELABEL(gpregret1));
-#endif
 
 static int prev_sys_button_state = 0;
 static int64_t sys_button_pressed_at;
@@ -1395,23 +1388,6 @@ static uint8_t const report_descriptor_xbox[] = {
     0xC0,                          // End Collection
 };
 
-static void reset_to_bootloader() {
-#ifdef CONFIG_BUILD_OUTPUT_UF2
-    if (!device_is_ready(gpregret_dev)) {
-        LOG_ERR("GPREGRET device not ready.");
-        return;
-    }
-
-    // https://github.com/adafruit/Adafruit_nRF52_Bootloader/blob/master/src/main.c#L112
-    uint8_t dfu_magic_uf2_reset = 0x57;
-
-    // Save the magic value and reboot, the bootloader will see it and enter UF2 mode.
-    if (CHK(retained_mem_write(gpregret_dev, 0, &dfu_magic_uf2_reset, 1))) {
-        sys_reboot(SYS_REBOOT_WARM);
-    }
-#endif
-}
-
 static void report_init_stadia(uint8_t* report) {
     struct report_stadia_t* report_ = (struct report_stadia_t*) report;
     report_->dpad = dpad_lut[0];
@@ -1852,7 +1828,9 @@ static void handle_buttons() {
             sys_button_very_long_press_handled = true;
             if (usb_ready) {
                 set_status_led(false);
-                reset_to_bootloader();
+                if (reset_to_bootloader) {
+                    reset_to_bootloader();
+                }
             } else {
 #ifdef CONFIG_BT
                 k_work_submit(&clear_bonds_work);

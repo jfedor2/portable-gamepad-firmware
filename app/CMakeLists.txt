@@ -6,3 +6,7 @@ project(slimbox-bt)
 target_sources(app PRIVATE
     src/main.c
 )
+
+if ("${CONFIG_BUILD_OUTPUT_UF2_FAMILY_ID}" STREQUAL "0xada52840")
+    target_sources(app PRIVATE src/bootloader_nrf52840.c)
+endif()
