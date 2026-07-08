@@ -1788,6 +1788,12 @@ static bool initialize_usb() {
         return false;
     }
 
+    if (!usbd_can_detect_vbus(&context)) {
+        if (!CHK(usbd_enable(&context))) {
+            return false;
+        }
+    }
+
     return true;
 }
 
