@@ -2187,5 +2187,7 @@ int main() {
 
     LOG_INF("Going to sleep...");
     LOG_PANIC();
+#ifdef CONFIG_POWEROFF
     sys_poweroff();
+#endif
 }

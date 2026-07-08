@@ -1,0 +1,29 @@
+// works for Pico and Pico 2
+
+/ {
+    gamepad-buttons {
+        compatible = "gpio-keys";
+        dpad-left { gpios = <&gpio0 5 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+        dpad-right { gpios = <&gpio0 4 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+        dpad-up { gpios = <&gpio0 2 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+        dpad-down { gpios = <&gpio0 3 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+        south { gpios = <&gpio0 6 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+        east { gpios = <&gpio0 7 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+        west { gpios = <&gpio0 10 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+        north { gpios = <&gpio0 11 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+        l1 { gpios = <&gpio0 13 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+        r1 { gpios = <&gpio0 12 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+        l2 { gpios = <&gpio0 9 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+        r2 { gpios = <&gpio0 8 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+        l3 { gpios = <&gpio0 18 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+        r3 { gpios = <&gpio0 19 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+        select { gpios = <&gpio0 16 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+        start { gpios = <&gpio0 17 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+        home { gpios = <&gpio0 20 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+        button14 { gpios = <&gpio0 21 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+    };
+
+    aliases {
+        sys-button = "/gamepad-buttons/start";
+    };
+};

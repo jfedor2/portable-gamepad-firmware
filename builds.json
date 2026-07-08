@@ -266,5 +266,120 @@
                 "boards/nrf54lm20dk_mapping.overlay"
             ]
         }
+    },
+    {
+        "name": "pico",
+        "sdk": "zephyr",
+        "board": "rpi_pico",
+        "artifact_built_name": "zephyr/zephyr.uf2",
+        "artifact_final_name": "slimbox-bt-pico.uf2",
+        "extra_params": {
+            "EXTRA_CONF_FILE": [
+                "boards/usb.conf"
+            ],
+            "EXTRA_DTC_OVERLAY_FILE": [
+                "boards/hid_dev.overlay",
+                "boards/pico_mapping.overlay"
+            ]
+        }
+    },
+    {
+        "name": "feather_rp2040",
+        "sdk": "zephyr",
+        "board": "adafruit_feather_rp2040",
+        "artifact_built_name": "zephyr/zephyr.uf2",
+        "artifact_final_name": "slimbox-bt-feather_rp2040.uf2",
+        "extra_params": {
+            "EXTRA_CONF_FILE": [
+                "boards/usb.conf"
+            ],
+            "EXTRA_DTC_OVERLAY_FILE": [
+                "boards/hid_dev.overlay",
+                "boards/feather_mapping.overlay"
+            ]
+        }
+    },
+    {
+        "name": "xiao_rp2040",
+        "sdk": "zephyr",
+        "board": "xiao_rp2040",
+        "artifact_built_name": "zephyr/zephyr.uf2",
+        "artifact_final_name": "slimbox-bt-xiao_rp2040.uf2",
+        "extra_params": {
+            "EXTRA_CONF_FILE": [
+                "boards/usb.conf"
+            ],
+            "EXTRA_DTC_OVERLAY_FILE": [
+                "boards/hid_dev.overlay",
+                "boards/xiao_mapping.overlay"
+            ]
+        }
+    },
+    {
+        "name": "flatbox_rev4",
+        "sdk": "zephyr",
+        "board": "rpi_pico",
+        "artifact_built_name": "zephyr/zephyr.uf2",
+        "artifact_final_name": "slimbox-bt-flatbox_rev4.uf2",
+        "extra_params": {
+            "EXTRA_CONF_FILE": [
+                "boards/usb.conf"
+            ],
+            "EXTRA_DTC_OVERLAY_FILE": [
+                "boards/hid_dev.overlay",
+                "boards/flatbox_rev4.overlay"
+            ]
+        }
+    },
+    {
+        "name": "flatbox_rev5",
+        "sdk": "zephyr",
+        "board": "rp2040_zero",
+        "artifact_built_name": "zephyr/zephyr.uf2",
+        "artifact_final_name": "slimbox-bt-flatbox_rev5.uf2",
+        "extra_params": {
+            "EXTRA_CONF_FILE": [
+                "boards/usb.conf"
+            ],
+            "EXTRA_DTC_OVERLAY_FILE": [
+                "boards/hid_dev.overlay",
+                "boards/flatbox_rev5.overlay"
+            ]
+        }
+    },
+    {
+        "name": "flatbox-rev7-rp2040",
+        "sdk": "zephyr",
+        "board": "xiao_rp2040",
+        "artifact_built_name": "zephyr/zephyr.uf2",
+        "artifact_final_name": "flatbox-rev7-rp2040.uf2",
+        "extra_params": {
+            "EXTRA_CONF_FILE": [
+                "boards/flatbox_rev7.conf",
+                "boards/usb.conf"
+            ],
+            "EXTRA_DTC_OVERLAY_FILE": [
+                "boards/hid_dev.overlay",
+                "boards/xiao_rp2040_i2c_pullup.overlay",
+                "boards/flatbox_rev7.overlay"
+            ]
+        }
+    },
+    {
+        "name": "flatbox-rev7.1-rp2040",
+        "sdk": "zephyr",
+        "board": "xiao_rp2040",
+        "artifact_built_name": "zephyr/zephyr.uf2",
+        "artifact_final_name": "flatbox-rev7.1-rp2040.uf2",
+        "extra_params": {
+            "EXTRA_CONF_FILE": [
+                "boards/flatbox_rev7.1.conf",
+                "boards/usb.conf"
+            ],
+            "EXTRA_DTC_OVERLAY_FILE": [
+                "boards/hid_dev.overlay",
+                "boards/flatbox_rev7.1.overlay"
+            ]
+        }
     }
 ]

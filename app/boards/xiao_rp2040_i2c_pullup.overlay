@@ -1,0 +1,10 @@
+&pinctrl {
+    i2c1_default {
+        group1 {
+            bias-pull-up;
+        };
+        group2 {
+            bias-pull-up;
+        };
+    };
+};

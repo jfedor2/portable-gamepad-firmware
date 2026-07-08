@@ -1,0 +1,12 @@
+&code_partition {
+	reg = <0x100 (DT_SIZE_M(1) - 0x100 - DT_SIZE_K(32))>;
+};
+
+&flash0 {
+	partitions {
+		storage_partition: partition@f8000 {
+			label = "storage";
+			reg = <(DT_SIZE_M(1) - DT_SIZE_K(32)) DT_SIZE_K(32)>;
+		};
+	};
+};

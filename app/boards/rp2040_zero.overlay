@@ -1,0 +1,2 @@
+#include "rp2040_storage_partition.dtsi"
+#include "rp2040_xosc_startup_delay.dtsi"

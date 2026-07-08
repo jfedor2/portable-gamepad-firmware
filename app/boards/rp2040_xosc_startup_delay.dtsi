@@ -1,0 +1,3 @@
+&xosc {
+    startup-delay-multiplier = <64>;
+};
