@@ -381,5 +381,54 @@
                 "boards/flatbox_rev7.1.overlay"
             ]
         }
+    },
+    {
+        "name": "pico2",
+        "sdk": "zephyr",
+        "board": "rpi_pico2/rp2350a/m33",
+        "artifact_built_name": "zephyr/zephyr.uf2",
+        "artifact_final_name": "slimbox-bt-pico2.uf2",
+        "extra_params": {
+            "EXTRA_CONF_FILE": [
+                "boards/usb.conf"
+            ],
+            "EXTRA_DTC_OVERLAY_FILE": [
+                "boards/hid_dev.overlay",
+                "boards/pico_mapping.overlay"
+            ]
+        }
+    },
+    {
+        "name": "xiao_rp2350",
+        "sdk": "zephyr",
+        "board": "rpi_pico2/rp2350a/m33",
+        "artifact_built_name": "zephyr/zephyr.uf2",
+        "artifact_final_name": "slimbox-bt-xiao_rp2350.uf2",
+        "extra_params": {
+            "EXTRA_CONF_FILE": [
+                "boards/usb.conf"
+            ],
+            "EXTRA_DTC_OVERLAY_FILE": [
+                "boards/hid_dev.overlay",
+                "boards/xiao_rp2350_connector.overlay",
+                "boards/xiao_mapping.overlay"
+            ]
+        }
+    },
+    {
+        "name": "flatbox_rev8",
+        "sdk": "zephyr",
+        "board": "rpi_pico2/rp2350a/m33",
+        "artifact_built_name": "zephyr/zephyr.uf2",
+        "artifact_final_name": "slimbox-bt-flatbox_rev8.uf2",
+        "extra_params": {
+            "EXTRA_CONF_FILE": [
+                "boards/usb.conf"
+            ],
+            "EXTRA_DTC_OVERLAY_FILE": [
+                "boards/hid_dev.overlay",
+                "boards/flatbox_rev8.overlay"
+            ]
+        }
     }
 ]

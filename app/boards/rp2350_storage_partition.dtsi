@@ -1,0 +1,25 @@
+/ {
+    chosen {
+        zephyr,code-partition = &code_partition;
+    };
+};
+
+&flash0 {
+    partitions {
+        compatible = "fixed-partitions";
+        #address-cells = <0x1>;
+        #size-cells = <0x1>;
+
+        code_partition: partition@0 {
+            compatible = "zephyr,mapped-partition";
+            label = "code";
+            reg = <0x0 (DT_SIZE_M(1) - DT_SIZE_K(32) - 4096)>;
+            read-only;
+        };
+
+        storage_partition: partition@f7000 {
+            label = "storage";
+            reg = <(DT_SIZE_M(1) - DT_SIZE_K(32) - 4096) DT_SIZE_K(32)>;
+        };
+    };
+};
