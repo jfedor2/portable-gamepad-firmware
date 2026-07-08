@@ -1,0 +1,28 @@
+/ {
+    gamepad-buttons {
+        compatible = "gpio-keys";
+        /* Flatbox rev9 */
+        dpad-left { gpios = <&porta 6 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+        dpad-right { gpios = <&porta 8 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+        dpad-up { gpios = <&porta 9 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+        dpad-down { gpios = <&porta 7 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+        south { gpios = <&porta 11 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+        east { gpios = <&porta 14 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+        west { gpios = <&porta 10 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+        north { gpios = <&porta 15 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+        l1 { gpios = <&porta 19 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+        r1 { gpios = <&porta 17 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+        l2 { gpios = <&porta 18 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+        r2 { gpios = <&porta 16 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+        l3 { gpios = <&porta 4 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+        r3 { gpios = <&porta 5 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+        select { gpios = <&porta 1 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+        start { gpios = <&porta 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+        home { gpios = <&porta 2 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+        button14 { gpios = <&porta 3 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+    };
+
+    aliases {
+        sys-button = "/gamepad-buttons/start";
+    };
+};

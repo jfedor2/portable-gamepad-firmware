@@ -430,5 +430,36 @@
                 "boards/flatbox_rev8.overlay"
             ]
         }
+    },
+    {
+        "name": "xiao_samd21",
+        "sdk": "zephyr",
+        "board": "seeeduino_xiao",
+        "artifact_built_name": "zephyr/zephyr.uf2",
+        "artifact_final_name": "slimbox-bt-xiao_samd21.uf2",
+        "extra_params": {
+            "EXTRA_CONF_FILE": [
+                "boards/usb.conf"
+            ],
+            "EXTRA_DTC_OVERLAY_FILE": [
+                "boards/hid_dev.overlay",
+                "boards/xiao_mapping.overlay"
+            ]
+        }
+    },
+    {
+        "name": "flatbox_rev9",
+        "sdk": "zephyr",
+        "board": "flatbox_rev9",
+        "artifact_built_name": "zephyr/zephyr.uf2",
+        "artifact_final_name": "slimbox-bt-flatbox_rev9.uf2",
+        "extra_params": {
+            "EXTRA_CONF_FILE": [
+                "boards/usb.conf"
+            ],
+            "EXTRA_DTC_OVERLAY_FILE": [
+                "boards/hid_dev.overlay"
+            ]
+        }
     }
 ]

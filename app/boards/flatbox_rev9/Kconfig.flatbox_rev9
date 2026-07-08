@@ -1,0 +1,2 @@
+config BOARD_FLATBOX_REV9
+	select SOC_SAMD21E18A

@@ -14,3 +14,7 @@ endif()
 if (CONFIG_SOC_SERIES_RP2040 OR CONFIG_SOC_SERIES_RP2350)
     target_sources(app PRIVATE src/bootloader_rp2040.c)
 endif()
+
+if ("${CONFIG_BUILD_OUTPUT_UF2_FAMILY_ID}" STREQUAL "0x68ed2b88")
+    target_sources(app PRIVATE src/bootloader_samd21.c)
+endif()

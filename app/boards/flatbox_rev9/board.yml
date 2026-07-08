@@ -1,0 +1,5 @@
+board:
+  name: flatbox_rev9
+  full_name: Flatbox rev9
+  socs:
+    - name: samd21e18a
