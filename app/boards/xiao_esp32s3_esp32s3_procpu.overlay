@@ -1,0 +1,14 @@
+/ {
+    chosen {
+        zephyr,console = &uart0;
+        zephyr,shell-uart = &uart0;
+    };
+};
+
+zephyr_udc0: &usb_otg {
+    status = "okay";
+};
+
+&usb_serial {
+    status = "disabled";
+};

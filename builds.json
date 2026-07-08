@@ -461,5 +461,55 @@
                 "boards/hid_dev.overlay"
             ]
         }
+    },
+    {
+        "name": "xiao_esp32s3",
+        "sdk": "zephyr",
+        "board": "xiao_esp32s3/esp32s3/procpu",
+        "artifact_built_name": "zephyr/zephyr.bin",
+        "artifact_final_name": "slimbox-bt-xiao_esp32s3.bin",
+        "extra_params": {
+            "EXTRA_CONF_FILE": [
+                "boards/usb.conf"
+            ],
+            "EXTRA_DTC_OVERLAY_FILE": [
+                "boards/hid_dev.overlay",
+                "boards/xiao_mapping.overlay"
+            ]
+        }
+    },
+    {
+        "name": "flatbox-rev7-esp32s3",
+        "sdk": "zephyr",
+        "board": "xiao_esp32s3/esp32s3/procpu",
+        "artifact_built_name": "zephyr/zephyr.bin",
+        "artifact_final_name": "flatbox-rev7-esp32s3.bin",
+        "extra_params": {
+            "EXTRA_CONF_FILE": [
+                "boards/flatbox_rev7.conf",
+                "boards/usb.conf"
+            ],
+            "EXTRA_DTC_OVERLAY_FILE": [
+                "boards/flatbox_rev7.overlay",
+                "boards/hid_dev.overlay"
+            ]
+        }
+    },
+    {
+        "name": "flatbox-rev7.1-esp32s3",
+        "sdk": "zephyr",
+        "board": "xiao_esp32s3/esp32s3/procpu",
+        "artifact_built_name": "zephyr/zephyr.bin",
+        "artifact_final_name": "flatbox-rev7.1-esp32s3.bin",
+        "extra_params": {
+            "EXTRA_CONF_FILE": [
+                "boards/flatbox_rev7.1.conf",
+                "boards/usb.conf"
+            ],
+            "EXTRA_DTC_OVERLAY_FILE": [
+                "boards/flatbox_rev7.1.overlay",
+                "boards/hid_dev.overlay"
+            ]
+        }
     }
 ]
