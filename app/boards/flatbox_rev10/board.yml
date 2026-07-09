@@ -1,0 +1,5 @@
+board:
+  name: flatbox_rev10
+  full_name: Flatbox rev10
+  socs:
+    - name: stm32g0b1xx
