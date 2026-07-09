@@ -543,5 +543,21 @@
                 "boards/xiao_mapping.overlay"
             ]
         }
+    },
+    {
+        "name": "teensy40",
+        "sdk": "zephyr",
+        "board": "teensy40",
+        "artifact_built_name": "zephyr/zephyr.hex",
+        "artifact_final_name": "slimbox-bt-teensy40.hex",
+        "extra_params": {
+            "EXTRA_CONF_FILE": [
+                "boards/usb.conf"
+            ],
+            "EXTRA_DTC_OVERLAY_FILE": [
+                "boards/hid_dev.overlay",
+                "boards/teensy40_mapping.overlay"
+            ]
+        }
     }
 ]

@@ -1,0 +1,24 @@
+/ {
+    chosen {
+        zephyr,code-partition = &code_partition;
+    };
+};
+
+&w25q16jvuxim {
+    partitions {
+        compatible = "fixed-partitions";
+        #address-cells = <1>;
+        #size-cells = <1>;
+
+        code_partition: partition@0 {
+            label = "code";
+            reg = <0x0 (DT_SIZE_M(1) - DT_SIZE_K(32))>;
+            read-only;
+        };
+
+        storage_partition: partition@f8000 {
+            label = "storage";
+            reg = <(DT_SIZE_M(1) - DT_SIZE_K(32)) DT_SIZE_K(32)>;
+        };
+    };
+};

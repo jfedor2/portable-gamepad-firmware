@@ -1,0 +1,27 @@
+/ {
+    gamepad-buttons {
+        compatible = "gpio-keys";
+        dpad-left { gpios = <&gpio4 4 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+        dpad-right { gpios = <&gpio4 5 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+        dpad-up { gpios = <&gpio4 6 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+        dpad-down { gpios = <&gpio4 8 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+        south { gpios = <&gpio2 10 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+        east { gpios = <&gpio2 17 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+        west { gpios = <&gpio2 16 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+        north { gpios = <&gpio2 11 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+        l1 { gpios = <&gpio2 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+        r1 { gpios = <&gpio2 2 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+        l2 { gpios = <&gpio1 18 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+        r2 { gpios = <&gpio1 19 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+        l3 { gpios = <&gpio1 23 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+        r3 { gpios = <&gpio1 22 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+        select { gpios = <&gpio1 17 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+        start { gpios = <&gpio1 16 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+        home { gpios = <&gpio1 26 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+        button14 { gpios = <&gpio1 27 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+    };
+
+    aliases {
+        sys-button = "/gamepad-buttons/start";
+    };
+};
