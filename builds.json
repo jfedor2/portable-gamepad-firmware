@@ -526,5 +526,22 @@
                 "boards/hid_dev.overlay"
             ]
         }
+    },
+    {
+        "name": "xiao_ra4m1",
+        "sdk": "zephyr",
+        "disabled": true,
+        "board": "xiao_ra4m1",
+        "artifact_built_name": "zephyr/zephyr.hex",
+        "artifact_final_name": "slimbox-bt-xiao_ra4m1.bin",
+        "extra_params": {
+            "EXTRA_CONF_FILE": [
+                "boards/usb.conf"
+            ],
+            "EXTRA_DTC_OVERLAY_FILE": [
+                "boards/hid_dev.overlay",
+                "boards/xiao_mapping.overlay"
+            ]
+        }
     }
 ]
