@@ -171,7 +171,8 @@
             ],
             "EXTRA_DTC_OVERLAY_FILE": [
                 "boards/holyiot_25008_mapping.overlay"
-            ]
+            ],
+            "CONFIG_SLIMBOX_BT_INPUT_MODE_DYNAMIC": "n"
         }
     },
     {
@@ -189,6 +190,7 @@
             "EXTRA_DTC_OVERLAY_FILE": [
                 "boards/holyiot_25008_mapping.overlay"
             ],
+            "CONFIG_SLIMBOX_BT_INPUT_MODE_DYNAMIC": "n",
             "SB_CONF_FILE": [
                 "sysbuild_boards/enable_mcuboot.conf"
             ],
@@ -209,7 +211,8 @@
             ],
             "EXTRA_DTC_OVERLAY_FILE": [
                 "boards/holyiot_25055_mapping.overlay"
-            ]
+            ],
+            "CONFIG_SLIMBOX_BT_INPUT_MODE_DYNAMIC": "n"
         }
     },
     {
@@ -227,6 +230,7 @@
             "EXTRA_DTC_OVERLAY_FILE": [
                 "boards/holyiot_25055_mapping.overlay"
             ],
+            "CONFIG_SLIMBOX_BT_INPUT_MODE_DYNAMIC": "n",
             "SB_CONF_FILE": [
                 "sysbuild_boards/enable_mcuboot.conf"
             ],
