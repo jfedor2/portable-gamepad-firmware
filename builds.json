@@ -1,10 +1,9 @@
 [
     {
-        "name": "adafruit_feather_nrf52840",
+        "name": "feather_nrf52840",
         "sdk": "ncs",
         "board": "adafruit_feather_nrf52840/nrf52840/uf2",
         "artifact_built_name": "app/zephyr/zephyr.uf2",
-        "artifact_final_name": "slimbox-bt-feather_nrf52840.uf2",
         "extra_params": {
             "EXTRA_CONF_FILE": [
                 "boards/bt.conf",
@@ -17,11 +16,10 @@
         }
     },
     {
-        "name": "flatbox-rev7-nrf52840",
+        "name": "flatbox_rev7-nrf52840",
         "sdk": "ncs",
         "board": "xiao_ble",
         "artifact_built_name": "app/zephyr/zephyr.uf2",
-        "artifact_final_name": "flatbox-rev7-nrf52840.uf2",
         "extra_params": {
             "EXTRA_CONF_FILE": [
                 "boards/bt.conf",
@@ -36,11 +34,10 @@
         }
     },
     {
-        "name": "flatbox-rev7.1-nrf52840",
+        "name": "flatbox_rev7.1-nrf52840",
         "sdk": "ncs",
         "board": "xiao_ble",
         "artifact_built_name": "app/zephyr/zephyr.uf2",
-        "artifact_final_name": "flatbox-rev7.1-nrf52840.uf2",
         "extra_params": {
             "EXTRA_CONF_FILE": [
                 "boards/bt.conf",
@@ -55,11 +52,10 @@
         }
     },
     {
-        "name": "flatbox-rev7-nrf54l15",
+        "name": "flatbox_rev7-nrf54l15",
         "sdk": "ncs",
         "board": "xiao_nrf54l15/nrf54l15/cpuapp",
         "artifact_built_name": "merged.hex",
-        "artifact_final_name": "flatbox-rev7-nrf54l15.hex",
         "extra_params": {
             "EXTRA_CONF_FILE": [
                 "boards/bt.conf",
@@ -72,11 +68,10 @@
         }
     },
     {
-        "name": "flatbox-rev7.1-nrf54l15",
+        "name": "flatbox_rev7.1-nrf54l15",
         "sdk": "ncs",
         "board": "xiao_nrf54l15/nrf54l15/cpuapp",
         "artifact_built_name": "merged.hex",
-        "artifact_final_name": "flatbox-rev7.1-nrf54l15.hex",
         "extra_params": {
             "EXTRA_CONF_FILE": [
                 "boards/bt.conf",
@@ -88,11 +83,10 @@
         }
     },
     {
-        "name": "seeed_xiao_nrf52840",
+        "name": "xiao_nrf52840",
         "sdk": "ncs",
         "board": "xiao_ble",
         "artifact_built_name": "app/zephyr/zephyr.uf2",
-        "artifact_final_name": "slimbox-bt-xiao_nrf52840.uf2",
         "extra_params": {
             "EXTRA_CONF_FILE": [
                 "boards/bt.conf",
@@ -105,11 +99,10 @@
         }
     },
     {
-        "name": "seeed_xiao_nrf54l15",
+        "name": "xiao_nrf54l15",
         "sdk": "ncs",
         "board": "xiao_nrf54l15/nrf54l15/cpuapp",
         "artifact_built_name": "merged.hex",
-        "artifact_final_name": "slimbox-bt-xiao_nrf54l15.hex",
         "extra_params": {
             "EXTRA_CONF_FILE": [
                 "boards/bt.conf"
@@ -120,12 +113,11 @@
         }
     },
     {
-        "name": "seeed_xiao_nrf54l15-otadfu",
+        "name": "xiao_nrf54l15-otadfu",
         "sdk": "ncs",
         "disabled": true,
         "board": "xiao_nrf54l15/nrf54l15/cpuapp",
         "artifact_built_name": "merged.hex",
-        "artifact_final_name": "slimbox-bt-xiao_nrf54l15-otadfu.hex",
         "extra_params": {
             "EXTRA_CONF_FILE": [
                 "boards/bt.conf",
@@ -147,7 +139,6 @@
         "sdk": "ncs",
         "board": "nice_nano",
         "artifact_built_name": "app/zephyr/zephyr.uf2",
-        "artifact_final_name": "slimbox-bt-nice_nano.uf2",
         "extra_params": {
             "EXTRA_CONF_FILE": [
                 "boards/bt.conf",
@@ -164,7 +155,6 @@
         "sdk": "ncs",
         "board": "holyiot_25008/nrf54l15/cpuapp",
         "artifact_built_name": "merged.hex",
-        "artifact_final_name": "slimbox-bt-holyiot_25008.hex",
         "extra_params": {
             "EXTRA_CONF_FILE": [
                 "boards/bt.conf"
@@ -172,7 +162,7 @@
             "EXTRA_DTC_OVERLAY_FILE": [
                 "boards/holyiot_25008_mapping.overlay"
             ],
-            "CONFIG_SLIMBOX_BT_INPUT_MODE_DYNAMIC": "n"
+            "CONFIG_PGF_INPUT_MODE_DYNAMIC": "n"
         }
     },
     {
@@ -181,7 +171,6 @@
         "disabled": true,
         "board": "holyiot_25008/nrf54l15/cpuapp",
         "artifact_built_name": "merged.hex",
-        "artifact_final_name": "slimbox-bt-holyiot_25008-otadfu.hex",
         "extra_params": {
             "EXTRA_CONF_FILE": [
                 "boards/bt.conf",
@@ -190,7 +179,7 @@
             "EXTRA_DTC_OVERLAY_FILE": [
                 "boards/holyiot_25008_mapping.overlay"
             ],
-            "CONFIG_SLIMBOX_BT_INPUT_MODE_DYNAMIC": "n",
+            "CONFIG_PGF_INPUT_MODE_DYNAMIC": "n",
             "SB_CONF_FILE": [
                 "sysbuild_boards/enable_mcuboot.conf"
             ],
@@ -204,7 +193,6 @@
         "sdk": "ncs",
         "board": "holyiot_25055/nrf54l05/cpuapp",
         "artifact_built_name": "merged.hex",
-        "artifact_final_name": "slimbox-bt-holyiot_25055.hex",
         "extra_params": {
             "EXTRA_CONF_FILE": [
                 "boards/bt.conf"
@@ -212,7 +200,7 @@
             "EXTRA_DTC_OVERLAY_FILE": [
                 "boards/holyiot_25055_mapping.overlay"
             ],
-            "CONFIG_SLIMBOX_BT_INPUT_MODE_DYNAMIC": "n"
+            "CONFIG_PGF_INPUT_MODE_DYNAMIC": "n"
         }
     },
     {
@@ -221,7 +209,6 @@
         "disabled": true,
         "board": "holyiot_25055/nrf54l05/cpuapp",
         "artifact_built_name": "merged.hex",
-        "artifact_final_name": "slimbox-bt-holyiot_25055-otadfu.hex",
         "extra_params": {
             "EXTRA_CONF_FILE": [
                 "boards/bt.conf",
@@ -230,7 +217,7 @@
             "EXTRA_DTC_OVERLAY_FILE": [
                 "boards/holyiot_25055_mapping.overlay"
             ],
-            "CONFIG_SLIMBOX_BT_INPUT_MODE_DYNAMIC": "n",
+            "CONFIG_PGF_INPUT_MODE_DYNAMIC": "n",
             "SB_CONF_FILE": [
                 "sysbuild_boards/enable_mcuboot.conf"
             ],
@@ -244,7 +231,6 @@
         "sdk": "ncs",
         "board": "nrf52dk/nrf52832",
         "artifact_built_name": "merged.hex",
-        "artifact_final_name": "slimbox-bt-nrf52dk.hex",
         "extra_params": {
             "EXTRA_CONF_FILE": [
                 "boards/bt.conf"
@@ -259,7 +245,6 @@
         "sdk": "ncs",
         "board": "nrf54lm20dk/nrf54lm20a/cpuapp",
         "artifact_built_name": "merged.hex",
-        "artifact_final_name": "slimbox-bt-nrf54lm20dk.hex",
         "extra_params": {
             "EXTRA_CONF_FILE": [
                 "boards/bt.conf",
@@ -276,7 +261,6 @@
         "sdk": "zephyr",
         "board": "rpi_pico",
         "artifact_built_name": "zephyr/zephyr.uf2",
-        "artifact_final_name": "slimbox-bt-pico.uf2",
         "extra_params": {
             "EXTRA_CONF_FILE": [
                 "boards/usb.conf"
@@ -292,7 +276,6 @@
         "sdk": "zephyr",
         "board": "adafruit_feather_rp2040",
         "artifact_built_name": "zephyr/zephyr.uf2",
-        "artifact_final_name": "slimbox-bt-feather_rp2040.uf2",
         "extra_params": {
             "EXTRA_CONF_FILE": [
                 "boards/usb.conf"
@@ -308,7 +291,6 @@
         "sdk": "zephyr",
         "board": "xiao_rp2040",
         "artifact_built_name": "zephyr/zephyr.uf2",
-        "artifact_final_name": "slimbox-bt-xiao_rp2040.uf2",
         "extra_params": {
             "EXTRA_CONF_FILE": [
                 "boards/usb.conf"
@@ -324,9 +306,9 @@
         "sdk": "zephyr",
         "board": "rpi_pico",
         "artifact_built_name": "zephyr/zephyr.uf2",
-        "artifact_final_name": "slimbox-bt-flatbox_rev4.uf2",
         "extra_params": {
             "EXTRA_CONF_FILE": [
+                "boards/flatbox_rev4.conf",
                 "boards/usb.conf"
             ],
             "EXTRA_DTC_OVERLAY_FILE": [
@@ -340,9 +322,9 @@
         "sdk": "zephyr",
         "board": "rp2040_zero",
         "artifact_built_name": "zephyr/zephyr.uf2",
-        "artifact_final_name": "slimbox-bt-flatbox_rev5.uf2",
         "extra_params": {
             "EXTRA_CONF_FILE": [
+                "boards/flatbox_rev5.conf",
                 "boards/usb.conf"
             ],
             "EXTRA_DTC_OVERLAY_FILE": [
@@ -352,11 +334,10 @@
         }
     },
     {
-        "name": "flatbox-rev7-rp2040",
+        "name": "flatbox_rev7-rp2040",
         "sdk": "zephyr",
         "board": "xiao_rp2040",
         "artifact_built_name": "zephyr/zephyr.uf2",
-        "artifact_final_name": "flatbox-rev7-rp2040.uf2",
         "extra_params": {
             "EXTRA_CONF_FILE": [
                 "boards/flatbox_rev7.conf",
@@ -370,11 +351,10 @@
         }
     },
     {
-        "name": "flatbox-rev7.1-rp2040",
+        "name": "flatbox_rev7.1-rp2040",
         "sdk": "zephyr",
         "board": "xiao_rp2040",
         "artifact_built_name": "zephyr/zephyr.uf2",
-        "artifact_final_name": "flatbox-rev7.1-rp2040.uf2",
         "extra_params": {
             "EXTRA_CONF_FILE": [
                 "boards/flatbox_rev7.1.conf",
@@ -391,7 +371,6 @@
         "sdk": "zephyr",
         "board": "rpi_pico2/rp2350a/m33",
         "artifact_built_name": "zephyr/zephyr.uf2",
-        "artifact_final_name": "slimbox-bt-pico2.uf2",
         "extra_params": {
             "EXTRA_CONF_FILE": [
                 "boards/usb.conf"
@@ -407,7 +386,6 @@
         "sdk": "zephyr",
         "board": "rpi_pico2/rp2350a/m33",
         "artifact_built_name": "zephyr/zephyr.uf2",
-        "artifact_final_name": "slimbox-bt-xiao_rp2350.uf2",
         "extra_params": {
             "EXTRA_CONF_FILE": [
                 "boards/usb.conf"
@@ -424,9 +402,9 @@
         "sdk": "zephyr",
         "board": "rpi_pico2/rp2350a/m33",
         "artifact_built_name": "zephyr/zephyr.uf2",
-        "artifact_final_name": "slimbox-bt-flatbox_rev8.uf2",
         "extra_params": {
             "EXTRA_CONF_FILE": [
+                "boards/flatbox_rev8.conf",
                 "boards/usb.conf"
             ],
             "EXTRA_DTC_OVERLAY_FILE": [
@@ -440,7 +418,6 @@
         "sdk": "zephyr",
         "board": "seeeduino_xiao",
         "artifact_built_name": "zephyr/zephyr.uf2",
-        "artifact_final_name": "slimbox-bt-xiao_samd21.uf2",
         "extra_params": {
             "EXTRA_CONF_FILE": [
                 "boards/usb.conf"
@@ -456,7 +433,6 @@
         "sdk": "zephyr",
         "board": "flatbox_rev9",
         "artifact_built_name": "zephyr/zephyr.uf2",
-        "artifact_final_name": "slimbox-bt-flatbox_rev9.uf2",
         "extra_params": {
             "EXTRA_CONF_FILE": [
                 "boards/usb.conf"
@@ -471,7 +447,6 @@
         "sdk": "zephyr",
         "board": "xiao_esp32s3/esp32s3/procpu",
         "artifact_built_name": "zephyr/zephyr.bin",
-        "artifact_final_name": "slimbox-bt-xiao_esp32s3.bin",
         "extra_params": {
             "EXTRA_CONF_FILE": [
                 "boards/usb.conf"
@@ -483,11 +458,10 @@
         }
     },
     {
-        "name": "flatbox-rev7-esp32s3",
+        "name": "flatbox_rev7-esp32s3",
         "sdk": "zephyr",
         "board": "xiao_esp32s3/esp32s3/procpu",
         "artifact_built_name": "zephyr/zephyr.bin",
-        "artifact_final_name": "flatbox-rev7-esp32s3.bin",
         "extra_params": {
             "EXTRA_CONF_FILE": [
                 "boards/flatbox_rev7.conf",
@@ -500,11 +474,10 @@
         }
     },
     {
-        "name": "flatbox-rev7.1-esp32s3",
+        "name": "flatbox_rev7.1-esp32s3",
         "sdk": "zephyr",
         "board": "xiao_esp32s3/esp32s3/procpu",
         "artifact_built_name": "zephyr/zephyr.bin",
-        "artifact_final_name": "flatbox-rev7.1-esp32s3.bin",
         "extra_params": {
             "EXTRA_CONF_FILE": [
                 "boards/flatbox_rev7.1.conf",
@@ -517,11 +490,10 @@
         }
     },
     {
-        "name": "flatbox-rev10",
+        "name": "flatbox_rev10",
         "sdk": "zephyr",
         "board": "flatbox_rev10",
         "artifact_built_name": "zephyr/zephyr.bin",
-        "artifact_final_name": "slimbox-bt-flatbox_rev10.bin",
         "extra_params": {
             "EXTRA_CONF_FILE": [
                 "boards/usb.conf"
@@ -537,7 +509,6 @@
         "disabled": true,
         "board": "xiao_ra4m1",
         "artifact_built_name": "zephyr/zephyr.hex",
-        "artifact_final_name": "slimbox-bt-xiao_ra4m1.bin",
         "extra_params": {
             "EXTRA_CONF_FILE": [
                 "boards/usb.conf"
@@ -553,7 +524,6 @@
         "sdk": "zephyr",
         "board": "teensy40",
         "artifact_built_name": "zephyr/zephyr.hex",
-        "artifact_final_name": "slimbox-bt-teensy40.hex",
         "extra_params": {
             "EXTRA_CONF_FILE": [
                 "boards/usb.conf"

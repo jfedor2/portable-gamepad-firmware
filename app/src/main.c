@@ -41,23 +41,11 @@
 
 #include "bootloader.h"
 
-LOG_MODULE_REGISTER(gamepad, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(pgf, LOG_LEVEL_DBG);
 
 static const struct gpio_dt_spec sys_button = GPIO_DT_SPEC_GET(DT_ALIAS(sys_button), gpios);
 
 #define CHK(X) ({ int err = X; if (err != 0) { LOG_ERR("%s returned %d (%s:%d)", #X, err, __FILE__, __LINE__); } err == 0; })
-
-#ifndef MANUFACTURER
-#define MANUFACTURER "Arasaka"
-#endif
-
-#ifndef PRODUCT
-#ifdef CONFIG_BT_DEVICE_NAME
-#define PRODUCT CONFIG_BT_DEVICE_NAME
-#else
-#define PRODUCT "Slimbox BT"
-#endif
-#endif
 
 #define PM_DEVICE_RUNTIME_GET(node_id, prop, idx) CHK(pm_device_runtime_get(DEVICE_DT_GET(DT_PHANDLE_BY_IDX(node_id, prop, idx))));
 #define PM_DEVICE_RUNTIME_PUT(node_id, prop, idx) CHK(pm_device_runtime_put(DEVICE_DT_GET(DT_PHANDLE_BY_IDX(node_id, prop, idx))));
@@ -117,7 +105,7 @@ struct __attribute__((packed)) config_t {
 
 static struct config_t config;
 
-#define SETTINGS_KEY "slimbox-bt/config"
+#define SETTINGS_KEY "pgf/config"
 
 static int load_config_cb(const char* key, size_t len, settings_read_cb read_cb, void* cb_arg, void* param) {
     LOG_INF("");
@@ -448,7 +436,7 @@ char bt_name[CONFIG_BT_DEVICE_NAME_MAX + 1];
 // max packet size is 31, 31-3-4-4-2=18
 // we append 5 characters to the name in set_bt_name()
 
-BUILD_ASSERT((sizeof(CONFIG_BT_DEVICE_NAME) + 5 - 1) <= 18, "CONFIG_BT_DEVICE_NAME too long");
+BUILD_ASSERT((sizeof(CONFIG_PGF_PRODUCT_NAME) + 5 - 1) <= 18, "CONFIG_PGF_PRODUCT_NAME too long");
 
 static const struct bt_data ad[] = {
     BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
@@ -458,7 +446,7 @@ static const struct bt_data ad[] = {
         (CONFIG_BT_DEVICE_APPEARANCE >> 8) & 0xff),
     BT_DATA(BT_DATA_NAME_COMPLETE,
         bt_name,
-        MIN(sizeof(CONFIG_BT_DEVICE_NAME) + 5 - 1, CONFIG_BT_DEVICE_NAME_MAX)),
+        MIN(sizeof(CONFIG_PGF_PRODUCT_NAME) + 5 - 1, CONFIG_BT_DEVICE_NAME_MAX)),
 };
 
 // We have our own DIS implementation to be able to change VID/PID at runtime.
@@ -489,7 +477,7 @@ BT_GATT_SERVICE_DEFINE(
     dis_svc,
     BT_GATT_PRIMARY_SERVICE(BT_UUID_DIS),
     BT_GATT_CHARACTERISTIC(BT_UUID_DIS_MODEL_NUMBER, BT_GATT_CHRC_READ, BT_GATT_PERM_READ, read_str, NULL, CONFIG_SOC),
-    BT_GATT_CHARACTERISTIC(BT_UUID_DIS_MANUFACTURER_NAME, BT_GATT_CHRC_READ, BT_GATT_PERM_READ, read_str, NULL, MANUFACTURER),
+    BT_GATT_CHARACTERISTIC(BT_UUID_DIS_MANUFACTURER_NAME, BT_GATT_CHRC_READ, BT_GATT_PERM_READ, read_str, NULL, CONFIG_PGF_MANUFACTURER_NAME),
     BT_GATT_CHARACTERISTIC(BT_UUID_DIS_PNP_ID, BT_GATT_CHRC_READ, BT_GATT_PERM_READ, read_pnp_id, NULL, NULL), );
 
 static struct bt_conn* active_conn = NULL;
@@ -1066,7 +1054,7 @@ static void set_bt_name() {
     }
 
     snprintf(bt_name, sizeof(bt_name), "%s %c%c%c%c",
-        CONFIG_BT_DEVICE_NAME,
+        CONFIG_PGF_PRODUCT_NAME,
         id_chars[(hash >> 0) & 0x1F],
         id_chars[(hash >> 5) & 0x1F],
         id_chars[(hash >> 10) & 0x1F],
@@ -1475,8 +1463,8 @@ const struct device* hid_dev = DEVICE_DT_GET_ONE(zephyr_hid_device);
 USBD_DEVICE_DEFINE(context, DEVICE_DT_GET(DT_NODELABEL(zephyr_udc0)), 0x0000, 0x0000);
 
 USBD_DESC_LANG_DEFINE(desc_lang);
-USBD_DESC_MANUFACTURER_DEFINE(desc_manufacturer, MANUFACTURER);
-USBD_DESC_PRODUCT_DEFINE(desc_product, PRODUCT);
+USBD_DESC_MANUFACTURER_DEFINE(desc_manufacturer, CONFIG_PGF_MANUFACTURER_NAME);
+USBD_DESC_PRODUCT_DEFINE(desc_product, CONFIG_PGF_PRODUCT_NAME);
 USBD_DESC_SERIAL_NUMBER_DEFINE(desc_serial_number);
 
 static const uint8_t attributes = 0;
@@ -1960,7 +1948,7 @@ static void fill_out_report(uint8_t* report, bool wired) {
 }
 
 static void determine_input_mode() {
-#ifdef CONFIG_SLIMBOX_BT_INPUT_MODE_DYNAMIC
+#ifdef CONFIG_PGF_INPUT_MODE_DYNAMIC
     if (CHK(settings_load_subtree_direct(SETTINGS_KEY, load_config_cb, &config))) {
         if (config.config_version == CONFIG_VERSION) {
             input_mode = config.input_mode;
@@ -1980,10 +1968,10 @@ static void determine_input_mode() {
 #endif
 
     if (input_mode == INPUT_MODE_UNKNOWN) {
-        input_mode = CONFIG_SLIMBOX_BT_INPUT_MODE_DEFAULT;
+        input_mode = CONFIG_PGF_INPUT_MODE_DEFAULT;
     }
 
-#ifdef CONFIG_SLIMBOX_BT_INPUT_MODE_DYNAMIC
+#ifdef CONFIG_PGF_INPUT_MODE_DYNAMIC
     config.config_version = CONFIG_VERSION;
     config.input_mode = input_mode;
 
@@ -2050,7 +2038,7 @@ static void determine_input_mode() {
 }
 
 int main() {
-    LOG_INF("Slimbox BT");
+    LOG_INF("Portable Gamepad Firmware");
 
 #if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), keep_awake_devices) && defined(CONFIG_PM_DEVICE_RUNTIME)
     DT_FOREACH_PROP_ELEM(DT_PATH(zephyr_user), keep_awake_devices, PM_DEVICE_RUNTIME_GET)

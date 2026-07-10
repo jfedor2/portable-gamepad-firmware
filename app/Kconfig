@@ -1,8 +1,8 @@
 source "Kconfig.zephyr"
 
-menu "Slimbox BT settings"
+menu "Portable Gamepad Firmware settings"
 
-config SLIMBOX_BT_INPUT_MODE_DEFAULT
+config PGF_INPUT_MODE_DEFAULT
     int "Default input mode"
     range 1 3
     default 1
@@ -11,8 +11,16 @@ config SLIMBOX_BT_INPUT_MODE_DEFAULT
         2 = Switch
         3 = PC
 
-config SLIMBOX_BT_INPUT_MODE_DYNAMIC
+config PGF_INPUT_MODE_DYNAMIC
     bool "Enable input mode switching"
     default y
+
+config PGF_MANUFACTURER_NAME
+    string "Device manufacturer string"
+    default "Arasaka"
+
+config PGF_PRODUCT_NAME
+    string "Device product name"
+    default "PGF"
 
 endmenu

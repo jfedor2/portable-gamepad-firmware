@@ -52,6 +52,6 @@ for b in builds:
         f'{prefix}ZEPHYR_BASE=`realpath "${{SDK_PATH_PREFIX}}"/{b["sdk"]}/zephyr` west build -p -d "${{BUILD_PATH_PREFIX}}"/{b["name"]} -b {b["board"]} app -- -DBOARD_ROOT="${{PWD}}"/app {extra_params}'
     )
     print(
-        f'{prefix}cp "${{BUILD_PATH_PREFIX}}"/{b["name"]}/{b["artifact_built_name"]} "${{ARTIFACTS_PATH}}"/{b["artifact_final_name"]}'
+        f'{prefix}cp "${{BUILD_PATH_PREFIX}}"/{b["name"]}/{b["artifact_built_name"]} "${{ARTIFACTS_PATH}}"/pgf-{b["name"]}.{b["artifact_built_name"].split(".")[-1]}'
     )
     print()
