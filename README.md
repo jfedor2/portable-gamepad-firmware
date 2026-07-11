@@ -82,30 +82,30 @@ GPIO21 | button 14
 </details>
 
 <details>
-<summary>Adafruit Feather nRF52840 Express</summary>
+<summary>Adafruit Feather</summary>
 
-If you're using an Adafruit Feather nRF52840 Express board, wire the buttons to pins on the board as follows:
+If you're using an Adafruit Feather board, wire the buttons to pins on the board as follows:
 
 pin | button
 --- | ------
-A5 | south
-A4 | east
-D2 | west
-MI | north
-10 | D-pad left
-6 | D-pad right
-A0 | D-pad up
-9 | D-pad down
-SCK | L1
-MO | R1
-A2 | L2
-A3 | R2
-12 | L3
-13 | R3
-SDA | select
-11 | start
-SCL | home
-5 | button 14
+A4 | south
+A5 | east
+SCK | west
+MO | north
+A0 | D-pad left
+A1 | D-pad right
+A2 | D-pad up
+A3 | D-pad down
+MI | L1
+SDA | R1
+SCL | L2
+D5 | R2
+D6 | L3
+D9 | R3
+D10 | select
+D11 | start
+D12 | home
+D13 | button 14
 </details>
 
 <details>

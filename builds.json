@@ -16,6 +16,23 @@
         }
     },
     {
+        "name": "slimbox_bt",
+        "sdk": "ncs",
+        "board": "adafruit_feather_nrf52840/nrf52840/uf2",
+        "artifact_built_name": "app/zephyr/zephyr.uf2",
+        "extra_params": {
+            "EXTRA_CONF_FILE": [
+                "boards/slimbox_bt.conf",
+                "boards/bt.conf",
+                "boards/usb.conf"
+            ],
+            "EXTRA_DTC_OVERLAY_FILE": [
+                "boards/hid_dev.overlay",
+                "boards/slimbox_bt_mapping.overlay"
+            ]
+        }
+    },
+    {
         "name": "flatbox_rev7-nrf52840",
         "sdk": "ncs",
         "board": "xiao_ble",

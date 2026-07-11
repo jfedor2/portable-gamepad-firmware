@@ -1,26 +1,26 @@
 / {
     gamepad-buttons {
-        /* Feather pin numbers start at A0 and go counter-clockwise around the board. */
         compatible = "gpio-keys";
-        dpad-left { gpios = <&feather_header 17 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
-        dpad-right { gpios = <&feather_header 15 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
-        dpad-up { gpios = <&feather_header 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
-        dpad-down { gpios = <&feather_header 16 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
-        south { gpios = <&feather_header 5 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
-        east { gpios = <&feather_header 4 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
-        /* Pin 11 ("D2" on Feather nRF52840) is not guaranteed to be usable on every Feather. */
-        west { gpios = <&feather_header 11 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
-        north { gpios = <&feather_header 8 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
-        l1 { gpios = <&feather_header 6 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
-        r1 { gpios = <&feather_header 7 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
-        l2 { gpios = <&feather_header 2 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
-        r2 { gpios = <&feather_header 3 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
-        l3 { gpios = <&feather_header 19 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
-        r3 { gpios = <&feather_header 20 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
-        select { gpios = <&feather_header 12 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+        /* Feather pin numbers start at A0 and go counter-clockwise around the board. */
+        dpad-left { gpios = <&feather_header 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+        dpad-right { gpios = <&feather_header 1 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+        dpad-up { gpios = <&feather_header 2 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+        dpad-down { gpios = <&feather_header 3 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+        south { gpios = <&feather_header 4 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+        east { gpios = <&feather_header 5 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+        west { gpios = <&feather_header 6 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+        north { gpios = <&feather_header 7 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+        l1 { gpios = <&feather_header 8 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+        /* skip RX, TX and the next pin */
+        r1 { gpios = <&feather_header 12 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+        l2 { gpios = <&feather_header 13 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+        r2 { gpios = <&feather_header 14 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+        l3 { gpios = <&feather_header 15 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+        r3 { gpios = <&feather_header 16 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+        select { gpios = <&feather_header 17 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
         start { gpios = <&feather_header 18 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
-        home { gpios = <&feather_header 13 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
-        button14 { gpios = <&feather_header 14 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+        home { gpios = <&feather_header 19 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+        button14 { gpios = <&feather_header 20 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
     };
 
     aliases {
