@@ -7,3 +7,7 @@ manifest:
       remote: zephyrproject-rtos
       revision: v4.3.1
       import: true
+    - name: hal_rpi_pico
+      path: modules/hal/rpi_pico
+      url: https://github.com/zephyrproject-rtos/hal_rpi_pico
+      revision: 562b41e10a1d8b1a761b253b107c5c6a84cf4535
