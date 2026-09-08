@@ -6,20 +6,86 @@ on:
       - 'west.yml'
       - 'builds.json'
       - 'build.py'
+  workflow_dispatch:
+    inputs:
+      build_name:
+        description: 'Build only this one build (leave empty to build everything)'
+        required: false
+        type: string
   workflow_call:
+    inputs:
+      build_name:
+        required: false
+        type: string
 defaults:
   run:
     shell: bash --noprofile --norc -x -e -o pipefail {0}
 jobs:
-  build:
+  generate-matrix:
     runs-on: ubuntu-22.04
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
       - uses: actions/checkout@v6
+      - id: set-matrix
+        run: |
+          build_name="${{ inputs.build_name }}"
+          if [ -n "$build_name" ]; then
+            matrix=$(jq -c --arg name "$build_name" '[.[] | select(.name == $name) | {name, sdk}]' builds.json)
+            if [ "$matrix" = "[]" ]; then
+              echo "::error::no build named '$build_name' in builds.json"
+              exit 1
+            fi
+          else
+            matrix=$(jq -c '[.[] | select(.disabled != true) | {name, sdk}]' builds.json)
+          fi
+          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
+  build:
+    needs: generate-matrix
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.generate-matrix.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Generate SDK setup script
+        run: |
+          ./build.py --name ${{ matrix.name }} --setup-only builds.json > setup.sh
+          chmod +x setup.sh
+
+      - name: Restore SDK cache
+        id: cache-restore
+        uses: actions/cache/restore@v6
+        with:
+          path: sdk/${{ matrix.sdk }}
+          key: sdk-${{ matrix.sdk }}-${{ hashFiles(format('west-{0}.yml', matrix.sdk), 'setup.sh') }}
+
+      - name: Set up SDK
+        if: steps.cache-restore.outputs.cache-hit != 'true'
+        run: |
+          docker run --user "$(id -u):$(id -g)" -e HOME=/workspace/project \
+            -v $PWD:/workspace/project -w /workspace/project \
+            ghcr.io/zephyrproject-rtos/ci:v0.29.2 ./setup.sh
+
+      - name: Save SDK cache
+        if: steps.cache-restore.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: sdk/${{ matrix.sdk }}
+          key: ${{ steps.cache-restore.outputs.cache-primary-key }}
+
       - name: Build
         run: |
-          ./build.py builds.json > build.sh
+          ./build.py --name ${{ matrix.name }} --no-setup builds.json > build.sh
           chmod +x build.sh
-          docker run -v $PWD:/workspace/project -w /workspace/project ghcr.io/zephyrproject-rtos/ci:v0.29.2 ./build.sh
+          docker run --user "$(id -u):$(id -g)" -e HOME=/workspace/project \
+            -e ZEPHYR_SDK_INSTALL_DIR=/opt/toolchains/zephyr-sdk-1.0.1 \
+            -v $PWD:/workspace/project -w /workspace/project \
+            ghcr.io/zephyrproject-rtos/ci:v0.29.2 ./build.sh
+
       - uses: actions/upload-artifact@v7
         with:
+          name: pgf-${{ matrix.name }}
           path: artifacts/*
