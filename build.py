@@ -12,7 +12,15 @@ def main():
     parser.add_argument(
         "--no-setup", action="store_true", help="skip SDK setup commands"
     )
+    parser.add_argument(
+        "--setup-only",
+        action="store_true",
+        help="only emit SDK setup commands, skip build commands",
+    )
     args = parser.parse_args()
+
+    if args.no_setup and args.setup_only:
+        parser.error("--no-setup and --setup-only are mutually exclusive")
 
     with open(args.builds_file, "r") as f:
         builds = json.load(f)
@@ -75,19 +83,20 @@ ZEPHYR_BASE=`realpath "${{SDK_PATH_PREFIX}}"/{sdk}/zephyr` west update -o=--dept
             if extra_setup_by_sdk.get(sdk):
                 print()
 
-    for b in builds:
-        prefix = "#" if b.get("disabled", False) and not args.name else ""
-        extra_params = " ".join(
-            f'-D{param}="{" ".join(values)}"'
-            for param, values in b["extra_params"].items()
-        )
-        print(
-            f'{prefix}ZEPHYR_BASE=`realpath "${{SDK_PATH_PREFIX}}"/{b["sdk"]}/zephyr` west build -p -d "${{BUILD_PATH_PREFIX}}"/{b["name"]} -b {b["board"]} app -- -DBOARD_ROOT="${{PWD}}"/app {extra_params}'
-        )
-        print(
-            f'{prefix}cp "${{BUILD_PATH_PREFIX}}"/{b["name"]}/{b["artifact_built_name"]} "${{ARTIFACTS_PATH}}"/pgf-{b["name"]}.{b["artifact_built_name"].split(".")[-1]}'
-        )
-        print()
+    if not args.setup_only:
+        for b in builds:
+            prefix = "#" if b.get("disabled", False) and not args.name else ""
+            extra_params = " ".join(
+                f'-D{param}="{" ".join(values)}"'
+                for param, values in b["extra_params"].items()
+            )
+            print(
+                f'{prefix}ZEPHYR_BASE=`realpath "${{SDK_PATH_PREFIX}}"/{b["sdk"]}/zephyr` west build -p -d "${{BUILD_PATH_PREFIX}}"/{b["name"]} -b {b["board"]} app -- -DBOARD_ROOT="${{PWD}}"/app {extra_params}'
+            )
+            print(
+                f'{prefix}cp "${{BUILD_PATH_PREFIX}}"/{b["name"]}/{b["artifact_built_name"]} "${{ARTIFACTS_PATH}}"/pgf-{b["name"]}.{b["artifact_built_name"].split(".")[-1]}'
+            )
+            print()
 
 
 if __name__ == "__main__":
