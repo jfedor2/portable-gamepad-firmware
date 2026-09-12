@@ -1,10 +1,8 @@
 / {
     gamepad-buttons {
         compatible = "gpio-keys";
+        /* same as south */
+        system { gpios = <&gpio1 13 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
         south { gpios = <&gpio1 13 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
-    };
-
-    aliases {
-        sys-button = "/gamepad-buttons/south";
     };
 };

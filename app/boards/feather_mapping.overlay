@@ -1,6 +1,8 @@
 / {
     gamepad-buttons {
         compatible = "gpio-keys";
+        /* same as start */
+        system { gpios = <&feather_header 18 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
         /* Feather pin numbers start at A0 and go counter-clockwise around the board. */
         dpad-left { gpios = <&feather_header 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
         dpad-right { gpios = <&feather_header 1 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
@@ -21,9 +23,5 @@
         start { gpios = <&feather_header 18 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
         home { gpios = <&feather_header 19 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
         button14 { gpios = <&feather_header 20 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
-    };
-
-    aliases {
-        sys-button = "/gamepad-buttons/start";
     };
 };

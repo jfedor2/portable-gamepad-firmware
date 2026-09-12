@@ -1,6 +1,8 @@
 / {
     gamepad-buttons {
         compatible = "gpio-keys";
+        /* same as start */
+        system { gpios = <&xiao_d 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; label = "D0"; };
         start { gpios = <&xiao_d 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; label = "D0"; };
         select { gpios = <&xiao_d 1 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; label = "D1"; };
         home { gpios = <&xiao_d 2 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; label = "D2"; };
@@ -19,10 +21,6 @@
         east { gpios = <&expander1 11 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; label = "GPB3"; };
         r2 { gpios = <&expander1 9 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; label = "GPB1"; };
         l2 { gpios = <&expander1 8 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; label = "GPB0"; };
-    };
-
-    aliases {
-        sys-button = "/gamepad-buttons/start";
     };
 };
 

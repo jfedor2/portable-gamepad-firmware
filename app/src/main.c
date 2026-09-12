@@ -51,7 +51,7 @@
 
 LOG_MODULE_REGISTER(pgf, LOG_LEVEL_DBG);
 
-static const struct gpio_dt_spec sys_button = GPIO_DT_SPEC_GET(DT_ALIAS(sys_button), gpios);
+static const struct gpio_dt_spec sys_button = GPIO_DT_SPEC_GET(DT_PATH(gamepad_buttons, system), gpios);
 
 #define PM_DEVICE_RUNTIME_GET(node_id, prop, idx) CHK(pm_device_runtime_get(DEVICE_DT_GET(DT_PHANDLE_BY_IDX(node_id, prop, idx))));
 #define PM_DEVICE_RUNTIME_PUT(node_id, prop, idx) CHK(pm_device_runtime_put(DEVICE_DT_GET(DT_PHANDLE_BY_IDX(node_id, prop, idx))));
@@ -1833,8 +1833,9 @@ static void configure_buttons(void) {
 
     LOG_INF("active_gpio_ports=%d", active_gpio_ports);
 
-    // sys_button is probably one of the gamepad buttons we just configured,
-    // but configure it anyway in case it's not.
+    // sys_button (the "system" gamepad button) was already configured above
+    // like any other button; reconfigure it here to additionally set
+    // GPIO_INT_WAKEUP, needed for waking from sleep on this pin.
     CHK(gpio_pin_configure_dt(&sys_button, GPIO_INPUT | GPIO_PULL_UP | GPIO_ACTIVE_LOW | GPIO_INT_WAKEUP));
 }
 
@@ -1875,7 +1876,10 @@ static void read_all_gpio_ports() {
 }
 
 static void handle_buttons() {
-    int sys_button_state = gpio_pin_get_dt(&sys_button);
+    read_all_gpio_ports();
+    update_button_states();
+
+    int sys_button_state = button_pressed[BUTTON(system)];
     int64_t now = k_uptime_get();
     if (!prev_sys_button_state && sys_button_state) {
         sys_button_pressed_at = now;
@@ -1911,9 +1915,6 @@ static void handle_buttons() {
         }
     }
     prev_sys_button_state = sys_button_state;
-
-    read_all_gpio_ports();
-    update_button_states();
 }
 
 static void fill_out_report(uint8_t* report, bool wired) {

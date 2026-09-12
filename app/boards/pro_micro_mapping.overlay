@@ -1,6 +1,8 @@
 / {
     gamepad-buttons {
         compatible = "gpio-keys";
+        /* same as start */
+        system { gpios = <&pro_micro 1 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
         // order of pins on Arduino Pro Micro, starting top left and going counter-clockwise:
         // 1 0 2 3 4 5 6 7 8 9
         // 10 16 14 15 18 19 20 21
@@ -22,9 +24,5 @@
         start { gpios = <&pro_micro 1 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
         home { gpios = <&pro_micro 20 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
         button14 { gpios = <&pro_micro 21 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
-    };
-
-    aliases {
-        sys-button = "/gamepad-buttons/start";
     };
 };

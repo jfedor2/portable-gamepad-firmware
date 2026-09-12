@@ -1,6 +1,8 @@
 / {
     gamepad-buttons {
         compatible = "gpio-keys";
+        /* the DK's own button 0 */
+        system { gpios = <&gpio1 26 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
         select { gpios = <&gpio1 4 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
         start { gpios = <&gpio1 5 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
         home { gpios = <&gpio1 6 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
@@ -19,9 +21,5 @@
         r2 { gpios = <&gpio0 3 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
         l3 { gpios = <&gpio0 4 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
         r3 { gpios = <&gpio0 5 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
-    };
-
-    aliases {
-        sys-button = &button0;
     };
 };

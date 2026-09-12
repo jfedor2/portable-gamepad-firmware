@@ -1,6 +1,8 @@
 / {
     gamepad-buttons {
         compatible = "gpio-keys";
+        /* same as start */
+        system { gpios = <&feather_header 18 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
         /* Feather pin numbers start at A0 and go counter-clockwise around the board. */
         /* A0-A3 are used for the analog sticks - see gamepad-axes below. */
         south { gpios = <&feather_header 4 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
@@ -38,9 +40,5 @@
         left-trigger-upper-end = <61440>;
         right-trigger-lower-end = <4096>;
         right-trigger-upper-end = <61440>;
-    };
-
-    aliases {
-        sys-button = "/gamepad-buttons/start";
     };
 };

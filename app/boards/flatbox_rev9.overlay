@@ -1,6 +1,8 @@
 / {
     gamepad-buttons {
         compatible = "gpio-keys";
+        /* same as start */
+        system { gpios = <&porta 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
         /* Flatbox rev9 */
         dpad-left { gpios = <&porta 6 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
         dpad-right { gpios = <&porta 8 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
@@ -20,9 +22,5 @@
         start { gpios = <&porta 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
         home { gpios = <&porta 2 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
         button14 { gpios = <&porta 3 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
-    };
-
-    aliases {
-        sys-button = "/gamepad-buttons/start";
     };
 };
