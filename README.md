@@ -46,6 +46,12 @@ The default mode is Stadia, which should work on a variety of platforms, includi
 
 Please note that when you switch the input mode on a wireless controller, you will likely need to unpair and re-pair it because most platforms can't handle the device's identity change properly.
 
+## D-pad modes
+
+On versions that don't have actual analog sticks, the D-pad can be used to emulate the left or the right analog stick. To make the D-pad work as the left analog stick, hold `left` while turning on or plugging in the controller. Similarly hold `right` to emulate the right analog stick and `down` to make the D-pad work as a D-pad again. The controller remembers the last selected D-pad mode.
+
+On battery-powered devices you need to switch the controller off and back on, holding a button while plugging the device in won't be enough if it's currently on.
+
 ## Flashing the firmware
 
 Assuming you're using one of the devices that come with a UF2 bootloader and for which pre-built binaries are provided, first you have to put your board in firmware flashing mode. On RP2040 and RP2350 based boards, this is done by holding the BOOTSEL button while plugging the device in. On some other boards it's done by pressing the RESET button twice quickly. If you succeed, a USB drive should appear on your computer. The name of the drive will depend on what device you're using. Download the appropriate UF2 file from the releases section (e.g. `pgf-feather_nrf52840.uf2` for the Adafruit Feather nRF52840 Express or `pgf-pico.uf2` for the Raspberry Pi Pico) and copy it to the drive that appeared.

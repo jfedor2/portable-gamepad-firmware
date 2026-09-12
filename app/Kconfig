@@ -15,6 +15,17 @@ config PGF_INPUT_MODE_DYNAMIC
     bool "Enable input mode switching"
     default y
 
+config PGF_DPAD_MODES
+    bool "Enable dpad mode switching"
+    default y
+    help
+        Lets the dpad be repurposed, at startup, to drive the left or
+        right analog stick instead of its own dpad input - selected by
+        holding down/left/right on power-up (same mechanism as input
+        mode) and persisted the same way. Must be disabled on any board
+        that already has a real analog stick axis configured via
+        gamepad-axes - the build fails otherwise.
+
 config PGF_MANUFACTURER_NAME
     string "Device manufacturer string"
     default "Arasaka"

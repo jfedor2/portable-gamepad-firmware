@@ -96,6 +96,23 @@ enum InputMode {
 
 static enum InputMode input_mode = INPUT_MODE_UNKNOWN;
 
+enum DpadMode {
+    DPAD_MODE_UNKNOWN = 0,
+    DPAD_MODE_DPAD = 1,
+    DPAD_MODE_LEFT_STICK = 2,
+    DPAD_MODE_RIGHT_STICK = 3,
+};
+
+static enum DpadMode dpad_mode = DPAD_MODE_UNKNOWN;
+
+// Dpad modes repurpose the dpad as a fake analog stick, so they can't
+// coexist with a board that already has that stick as a real analog input.
+#if defined(CONFIG_PGF_DPAD_MODES) &&                                                                   \
+    (HAVE_ANALOG_AXIS(left_stick_x) || HAVE_ANALOG_AXIS(left_stick_y) || HAVE_ANALOG_AXIS(right_stick_x) || \
+     HAVE_ANALOG_AXIS(right_stick_y))
+#error "CONFIG_PGF_DPAD_MODES can't be enabled together with a real analog stick axis - disable it for this board."
+#endif
+
 #ifdef CONFIG_USBD_HID_SUPPORT
 const uint8_t* wired_report_descriptor;
 size_t wired_report_descriptor_length;
@@ -110,11 +127,12 @@ size_t bluetooth_report_size;
 uint8_t bluetooth_report_id;
 #endif
 
-#define CONFIG_VERSION 1
+#define CONFIG_VERSION 2
 
 struct __attribute__((packed)) config_t {
     uint8_t config_version;
     uint8_t input_mode;
+    uint8_t dpad_mode;
 };
 
 static struct config_t config;
@@ -1917,7 +1935,21 @@ static void handle_buttons() {
     prev_sys_button_state = sys_button_state;
 }
 
+// Used when dpad_mode redirects the dpad to drive a stick instead of its
+// own input: full deflection only (no partial range), in the same 0-65535
+// range/32768-center convention analog_axes readings use.
+static uint16_t dpad_axis_value(bool negative, bool positive) {
+    if (negative == positive) {
+        return 32768;
+    }
+    return negative ? 0 : 65535;
+}
+
 static void fill_out_report(uint8_t* report, bool wired) {
+    // Dpad modes replace the dpad's own input with stick input, so its
+    // buttons must not also register as dpad presses while that's active.
+    bool dpad_active = (dpad_mode == DPAD_MODE_DPAD);
+
     switch (input_mode) {
         case INPUT_MODE_STADIA: {
             struct report_stadia_t* report_ = (struct report_stadia_t*) report;
@@ -1941,11 +1973,25 @@ static void fill_out_report(uint8_t* report, bool wired) {
             if (report_->lx == 0) {
                 report_->lx = 1;
             }
+#else
+            if (dpad_mode == DPAD_MODE_LEFT_STICK) {
+                report_->lx = dpad_axis_value(BUTTON_GET(dpad_left), BUTTON_GET(dpad_right)) >> 8;
+                if (report_->lx == 0) {
+                    report_->lx = 1;
+                }
+            }
 #endif
 #if HAVE_ANALOG_AXIS(left_stick_y)
             report_->ly = *analog_axes[ANALOG_AXIS_LY] >> 8;
             if (report_->ly == 0) {
                 report_->ly = 1;
+            }
+#else
+            if (dpad_mode == DPAD_MODE_LEFT_STICK) {
+                report_->ly = dpad_axis_value(BUTTON_GET(dpad_up), BUTTON_GET(dpad_down)) >> 8;
+                if (report_->ly == 0) {
+                    report_->ly = 1;
+                }
             }
 #endif
 #if HAVE_ANALOG_AXIS(right_stick_x)
@@ -1953,11 +1999,25 @@ static void fill_out_report(uint8_t* report, bool wired) {
             if (report_->rx == 0) {
                 report_->rx = 1;
             }
+#else
+            if (dpad_mode == DPAD_MODE_RIGHT_STICK) {
+                report_->rx = dpad_axis_value(BUTTON_GET(dpad_left), BUTTON_GET(dpad_right)) >> 8;
+                if (report_->rx == 0) {
+                    report_->rx = 1;
+                }
+            }
 #endif
 #if HAVE_ANALOG_AXIS(right_stick_y)
             report_->ry = *analog_axes[ANALOG_AXIS_RY] >> 8;
             if (report_->ry == 0) {
                 report_->ry = 1;
+            }
+#else
+            if (dpad_mode == DPAD_MODE_RIGHT_STICK) {
+                report_->ry = dpad_axis_value(BUTTON_GET(dpad_up), BUTTON_GET(dpad_down)) >> 8;
+                if (report_->ry == 0) {
+                    report_->ry = 1;
+                }
             }
 #endif
 #if HAVE_ANALOG_AXIS(left_trigger)
@@ -1975,7 +2035,7 @@ static void fill_out_report(uint8_t* report, bool wired) {
             report_->r2_axis = report_->r2 * 255;
 #endif
 
-            int dpad = BUTTON_GET(dpad_left) | (BUTTON_GET(dpad_right) << 1) | (BUTTON_GET(dpad_up) << 2) | (BUTTON_GET(dpad_down) << 3);
+            int dpad = dpad_active ? (BUTTON_GET(dpad_left) | (BUTTON_GET(dpad_right) << 1) | (BUTTON_GET(dpad_up) << 2) | (BUTTON_GET(dpad_down) << 3)) : 0;
 
             report_->dpad = dpad_lut[dpad];
 
@@ -2010,18 +2070,34 @@ static void fill_out_report(uint8_t* report, bool wired) {
 
 #if HAVE_ANALOG_AXIS(left_stick_x)
             report_->lx = *analog_axes[ANALOG_AXIS_LX] >> 8;
+#else
+            if (dpad_mode == DPAD_MODE_LEFT_STICK) {
+                report_->lx = dpad_axis_value(BUTTON_GET(dpad_left), BUTTON_GET(dpad_right)) >> 8;
+            }
 #endif
 #if HAVE_ANALOG_AXIS(left_stick_y)
             report_->ly = *analog_axes[ANALOG_AXIS_LY] >> 8;
+#else
+            if (dpad_mode == DPAD_MODE_LEFT_STICK) {
+                report_->ly = dpad_axis_value(BUTTON_GET(dpad_up), BUTTON_GET(dpad_down)) >> 8;
+            }
 #endif
 #if HAVE_ANALOG_AXIS(right_stick_x)
             report_->rx = *analog_axes[ANALOG_AXIS_RX] >> 8;
+#else
+            if (dpad_mode == DPAD_MODE_RIGHT_STICK) {
+                report_->rx = dpad_axis_value(BUTTON_GET(dpad_left), BUTTON_GET(dpad_right)) >> 8;
+            }
 #endif
 #if HAVE_ANALOG_AXIS(right_stick_y)
             report_->ry = *analog_axes[ANALOG_AXIS_RY] >> 8;
+#else
+            if (dpad_mode == DPAD_MODE_RIGHT_STICK) {
+                report_->ry = dpad_axis_value(BUTTON_GET(dpad_up), BUTTON_GET(dpad_down)) >> 8;
+            }
 #endif
 
-            int dpad = BUTTON_GET(dpad_left) | (BUTTON_GET(dpad_right) << 1) | (BUTTON_GET(dpad_up) << 2) | (BUTTON_GET(dpad_down) << 3);
+            int dpad = dpad_active ? (BUTTON_GET(dpad_left) | (BUTTON_GET(dpad_right) << 1) | (BUTTON_GET(dpad_up) << 2) | (BUTTON_GET(dpad_down) << 3)) : 0;
 
             report_->dpad = dpad_lut[dpad];
 
@@ -2031,10 +2107,10 @@ static void fill_out_report(uint8_t* report, bool wired) {
             if (wired) {
 #ifdef CONFIG_USBD_HID_SUPPORT
                 struct report_xusb_t* report_ = (struct report_xusb_t*) report;
-                report_->dpad_left = BUTTON_GET(dpad_left);
-                report_->dpad_right = BUTTON_GET(dpad_right);
-                report_->dpad_up = BUTTON_GET(dpad_up);
-                report_->dpad_down = BUTTON_GET(dpad_down);
+                report_->dpad_left = dpad_active && BUTTON_GET(dpad_left);
+                report_->dpad_right = dpad_active && BUTTON_GET(dpad_right);
+                report_->dpad_up = dpad_active && BUTTON_GET(dpad_up);
+                report_->dpad_down = dpad_active && BUTTON_GET(dpad_down);
                 report_->a = BUTTON_GET(south);
                 report_->b = BUTTON_GET(east);
                 report_->x = BUTTON_GET(west);
@@ -2050,15 +2126,31 @@ static void fill_out_report(uint8_t* report, bool wired) {
                 // sticks are signed, centered on 0 (-32768..32767)
 #if HAVE_ANALOG_AXIS(left_stick_x)
                 report_->lx = (int16_t) (*analog_axes[ANALOG_AXIS_LX] - 32768);
+#else
+                if (dpad_mode == DPAD_MODE_LEFT_STICK) {
+                    report_->lx = (int16_t) (dpad_axis_value(BUTTON_GET(dpad_left), BUTTON_GET(dpad_right)) - 32768);
+                }
 #endif
 #if HAVE_ANALOG_AXIS(left_stick_y)
                 report_->ly = (int16_t) (*analog_axes[ANALOG_AXIS_LY] - 32768);
+#else
+                if (dpad_mode == DPAD_MODE_LEFT_STICK) {
+                    report_->ly = (int16_t) (dpad_axis_value(BUTTON_GET(dpad_up), BUTTON_GET(dpad_down)) - 32768);
+                }
 #endif
 #if HAVE_ANALOG_AXIS(right_stick_x)
                 report_->rx = (int16_t) (*analog_axes[ANALOG_AXIS_RX] - 32768);
+#else
+                if (dpad_mode == DPAD_MODE_RIGHT_STICK) {
+                    report_->rx = (int16_t) (dpad_axis_value(BUTTON_GET(dpad_left), BUTTON_GET(dpad_right)) - 32768);
+                }
 #endif
 #if HAVE_ANALOG_AXIS(right_stick_y)
                 report_->ry = (int16_t) (*analog_axes[ANALOG_AXIS_RY] - 32768);
+#else
+                if (dpad_mode == DPAD_MODE_RIGHT_STICK) {
+                    report_->ry = (int16_t) (dpad_axis_value(BUTTON_GET(dpad_up), BUTTON_GET(dpad_down)) - 32768);
+                }
 #endif
 
                 // triggers are 0..255.
@@ -2092,15 +2184,31 @@ static void fill_out_report(uint8_t* report, bool wired) {
                 // sticks are 0..65535
 #if HAVE_ANALOG_AXIS(left_stick_x)
                 report_->lx = *analog_axes[ANALOG_AXIS_LX];
+#else
+                if (dpad_mode == DPAD_MODE_LEFT_STICK) {
+                    report_->lx = dpad_axis_value(BUTTON_GET(dpad_left), BUTTON_GET(dpad_right));
+                }
 #endif
 #if HAVE_ANALOG_AXIS(left_stick_y)
                 report_->ly = *analog_axes[ANALOG_AXIS_LY];
+#else
+                if (dpad_mode == DPAD_MODE_LEFT_STICK) {
+                    report_->ly = dpad_axis_value(BUTTON_GET(dpad_up), BUTTON_GET(dpad_down));
+                }
 #endif
 #if HAVE_ANALOG_AXIS(right_stick_x)
                 report_->rx = *analog_axes[ANALOG_AXIS_RX];
+#else
+                if (dpad_mode == DPAD_MODE_RIGHT_STICK) {
+                    report_->rx = dpad_axis_value(BUTTON_GET(dpad_left), BUTTON_GET(dpad_right));
+                }
 #endif
 #if HAVE_ANALOG_AXIS(right_stick_y)
                 report_->ry = *analog_axes[ANALOG_AXIS_RY];
+#else
+                if (dpad_mode == DPAD_MODE_RIGHT_STICK) {
+                    report_->ry = dpad_axis_value(BUTTON_GET(dpad_up), BUTTON_GET(dpad_down));
+                }
 #endif
 
                 // triggers are 0..1023
@@ -2115,7 +2223,7 @@ static void fill_out_report(uint8_t* report, bool wired) {
                 report_->rt = BUTTON_GET(r2) * 1023;
 #endif
 
-                int dpad = BUTTON_GET(dpad_left) | (BUTTON_GET(dpad_right) << 1) | (BUTTON_GET(dpad_up) << 2) | (BUTTON_GET(dpad_down) << 3);
+                int dpad = dpad_active ? (BUTTON_GET(dpad_left) | (BUTTON_GET(dpad_right) << 1) | (BUTTON_GET(dpad_up) << 2) | (BUTTON_GET(dpad_down) << 3)) : 0;
 
                 report_->dpad = dpad_lut_xbox[dpad];
 #endif
@@ -2218,6 +2326,41 @@ static void determine_input_mode() {
     }
 }
 
+static void determine_dpad_mode() {
+#ifdef CONFIG_PGF_DPAD_MODES
+    if (CHK(settings_load_subtree_direct(SETTINGS_KEY, load_config_cb, &config))) {
+        if (config.config_version == CONFIG_VERSION) {
+            dpad_mode = config.dpad_mode;
+            LOG_INF("saved dpad mode: %d", dpad_mode);
+        }
+    }
+
+    read_all_gpio_ports();
+    update_button_states();
+
+    if (BUTTON_GET(dpad_down)) {
+        dpad_mode = DPAD_MODE_DPAD;
+    } else if (BUTTON_GET(dpad_left)) {
+        dpad_mode = DPAD_MODE_LEFT_STICK;
+    } else if (BUTTON_GET(dpad_right)) {
+        dpad_mode = DPAD_MODE_RIGHT_STICK;
+    }
+#endif
+
+    if (dpad_mode == DPAD_MODE_UNKNOWN) {
+        dpad_mode = DPAD_MODE_DPAD;
+    }
+
+#ifdef CONFIG_PGF_DPAD_MODES
+    config.config_version = CONFIG_VERSION;
+    config.dpad_mode = dpad_mode;
+
+    LOG_INF("final dpad_mode: %d", dpad_mode);
+
+    CHK(settings_save_one(SETTINGS_KEY, &config, sizeof(struct config_t)));
+#endif
+}
+
 int main() {
     LOG_INF("Portable Gamepad Firmware");
 
@@ -2231,6 +2374,7 @@ int main() {
 #endif
     configure_buttons();
     determine_input_mode();
+    determine_dpad_mode();
     report_init();
 
 #ifdef CONFIG_BT
