@@ -18,6 +18,7 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/hash_function.h>
 #include <zephyr/sys/printk.h>
+#include <zephyr/sys/time_units.h>
 #include <zephyr/types.h>
 #include <zephyr/version.h>
 
@@ -60,6 +61,10 @@ static const struct gpio_dt_spec sys_button = GPIO_DT_SPEC_GET(DT_ALIAS(sys_butt
 
 #define SYS_BUTTON_LONG_PRESS_MS 3000
 #define SYS_BUTTON_VERY_LONG_PRESS_MS 10000
+
+// Applies to every gamepad button GPIO pin. 0 (the default) disables
+// debouncing entirely.
+#define GPIO_DEBOUNCE_TIME_US DT_PROP_OR(DT_PATH(zephyr_user), gpio_debounce_time_us, 0)
 
 #ifdef CONFIG_BT
 
@@ -372,6 +377,13 @@ static const struct button_gpio_entry button_gpio_entries[] = {
 
 static gpio_port_value_t* entry_port_states[NUM_BUTTON_GPIO_ENTRIES];
 
+// Debounced state of each gpio entry, and the cycle count at which it last
+// changed - both indexed the same as button_gpio_entries/entry_port_states.
+static bool entry_state[NUM_BUTTON_GPIO_ENTRIES];
+static uint32_t entry_last_change_cycles[NUM_BUTTON_GPIO_ENTRIES];
+
+// Recomputed once per poll: true if any (debounced) gpio entry belonging to
+// that button is currently active.
 static bool button_pressed[NUM_BUTTONS];
 
 #define _COUNT_GPIO_CONTROLLER(node_id) IF_ENABLED(DT_NODE_HAS_PROP(node_id, gpio_controller), (+1))
@@ -1830,9 +1842,27 @@ static void configure_buttons(void) {
     COND_CODE_1(DT_NODE_EXISTS(DT_PATH(gamepad_buttons, name)), (button_pressed[BUTTON(name)]), (0))
 
 static void update_button_states(void) {
+    uint32_t now = k_cycle_get_32();
+
     memset(button_pressed, 0, sizeof(button_pressed));
+
     for (size_t i = 0; i < NUM_BUTTON_GPIO_ENTRIES; i++) {
-        if (*entry_port_states[i] & BIT(button_gpio_entries[i].spec.pin)) {
+        bool raw_state = 0 != (*entry_port_states[i] & BIT(button_gpio_entries[i].spec.pin));
+
+        if (raw_state != entry_state[i]) {
+            // now - entry_last_change_cycles[i] wraps around correctly even
+            // if k_cycle_get_32() has overflowed since the last change.
+            uint64_t elapsed_us = k_cyc_to_us_floor64((uint32_t) (now - entry_last_change_cycles[i]));
+            if (elapsed_us >= GPIO_DEBOUNCE_TIME_US) {
+                entry_state[i] = raw_state;
+                entry_last_change_cycles[i] = now;
+            }
+            // Otherwise this is a bounce: ignore it, keep the previous
+            // entry_state[i], and leave entry_last_change_cycles[i]
+            // pointing at the last change that actually got accepted.
+        }
+
+        if (entry_state[i]) {
             button_pressed[button_gpio_entries[i].button] = true;
         }
     }
@@ -2106,6 +2136,7 @@ static void determine_input_mode() {
     }
 
     read_all_gpio_ports();
+    update_button_states();
 
     if (BUTTON_GET(south)) {
         input_mode = INPUT_MODE_STADIA;
