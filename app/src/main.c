@@ -1547,6 +1547,10 @@ static struct usb_if_descriptor xusb_desc_if0 = {
     .iInterface = 0,
 };
 
+// Buffers for IN reports point at usb_report (no data of their own), same as
+// what the HID class does. This avoids a heap allocation for every report.
+NET_BUF_POOL_DEFINE(xusb_pool_in, 2, 0, sizeof(struct udc_buf_info), NULL);
+
 #define XUSB_PROPRIETARY_DESCRIPTOR_TYPE 0x21
 
 static struct usb_xusb_proprietary_descriptor {
@@ -2233,9 +2237,10 @@ int main() {
             if (memcmp(prev_wired_report, wired_report, wired_report_size)) {
                 if (!k_sem_take(&hid_report_sem, K_NO_WAIT)) {
                     if (input_mode == INPUT_MODE_PC) {
-                        struct net_buf* xbuf = usbd_ep_buf_alloc(&xusb, xusb_desc_if0_in_ep.bEndpointAddress, wired_report_size);
+                        memcpy(usb_report, wired_report, wired_report_size);
+                        struct net_buf* xbuf = net_buf_alloc_with_data(&xusb_pool_in, usb_report, wired_report_size, K_NO_WAIT);
                         if (xbuf) {
-                            net_buf_add_mem(xbuf, wired_report, wired_report_size);
+                            udc_get_buf_info(xbuf)->ep = xusb_desc_if0_in_ep.bEndpointAddress;
                             if (CHK(usbd_ep_enqueue(&xusb, xbuf))) {
                                 memcpy(prev_wired_report, wired_report, wired_report_size);
                             } else {
