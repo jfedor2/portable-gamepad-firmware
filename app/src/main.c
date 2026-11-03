@@ -2379,6 +2379,7 @@ int main() {
 #ifdef CONFIG_ADC
     initialize_adc();
 #endif
+    sleep_init(&sys_button);
     configure_buttons();
     determine_input_mode();
     determine_dpad_mode();

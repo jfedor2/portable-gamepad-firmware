@@ -10,6 +10,9 @@
 
 LOG_MODULE_DECLARE(pgf);
 
+void sleep_init(const struct gpio_dt_spec* wake_button) {
+}
+
 void enter_sleep(const struct gpio_dt_spec* wake_button) {
     CHK(gpio_pin_interrupt_configure_dt(wake_button, GPIO_INT_LEVEL_ACTIVE));
 #ifdef CONFIG_POWEROFF

@@ -11,6 +11,9 @@
 
 LOG_MODULE_DECLARE(pgf);
 
+void sleep_init(const struct gpio_dt_spec* wake_button) {
+}
+
 void enter_sleep(const struct gpio_dt_spec* wake_button) {
     // Silicon Labs' GPIO interrupt controller doesn't support level-triggered
     // interrupts (only edge), and it checks GPIO_INT_WAKEUP here.

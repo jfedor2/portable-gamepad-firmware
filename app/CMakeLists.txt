@@ -32,6 +32,8 @@ endif()
 
 if (CONFIG_SOC_FAMILY_SILABS_S2)
     target_sources(app PRIVATE src/sleep_silabs.c)
+elseif (CONFIG_SOC_FAMILY_ESPRESSIF_ESP32)
+    target_sources(app PRIVATE src/sleep_esp32.c)
 else()
     target_sources(app PRIVATE src/sleep_default.c)
 endif()
