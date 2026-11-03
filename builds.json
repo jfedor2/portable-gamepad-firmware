@@ -676,7 +676,6 @@
     {
         "name": "xiao_ra4m1",
         "sdk": "zephyr",
-        "disabled": true,
         "board": "xiao_ra4m1",
         "artifact_built_name": "zephyr/zephyr.hex",
         "extra_params": {

@@ -6,7 +6,7 @@ This repository contains code for wired/wireless game controller firmware that r
 
 * USB/Bluetooth LE
 * compatible with Windows, Mac, Linux, Switch, Switch 2, Android, iOS
-* tested on RP2040, RP2350, nRF52840, nRF52832, nRF54L15, nRF54LM20, SAMD21, STM32G0B1, ESP32-S3, ESP32-C3, ESP32-C6, MIMXRT1062, MG24
+* tested on RP2040, RP2350, nRF52840, nRF52832, nRF54L15, nRF54LM20, SAMD21, STM32G0B1, ESP32-S3, ESP32-C3, ESP32-C6, MIMXRT1062, MG24, RA4M1
 
 For a full list of pre-built binaries, see the [latest release](https://github.com/jfedor2/portable-gamepad-firmware/releases/latest/).
 

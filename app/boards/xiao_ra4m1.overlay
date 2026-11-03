@@ -2,7 +2,7 @@
     status = "okay";
 };
 
-&flash1 {
+&data_flash {
     partitions {
         compatible = "fixed-partitions";
         #address-cells = <1>;
