@@ -48,6 +48,7 @@
 #include "bootloader.h"
 #include "chk.h"
 #include "sleep.h"
+#include "usb_vbus.h"
 
 LOG_MODULE_REGISTER(pgf, LOG_LEVEL_DBG);
 
@@ -1557,11 +1558,23 @@ static struct hid_device_ops ops = {
     .input_report_done = input_report_done,
 };
 
+// We may try to enable USB both on startup (when vbus_present_unreported())
+// and on USBD_MSG_VBUS_READY, if the driver reports VBUS after all, in either
+// order, so the second attempt failing with -EALREADY is fine.
+static bool enable_usb(struct usbd_context* const ctx) {
+    int err = usbd_enable(ctx);
+    if (err && (err != -EALREADY)) {
+        LOG_ERR("usbd_enable() returned %d", err);
+        return false;
+    }
+    return true;
+}
+
 static void usbd_msg_cb(struct usbd_context* const ctx, const struct usbd_msg* msg) {
     switch (msg->type) {
         case USBD_MSG_VBUS_READY:
             LOG_INF("USBD_MSG_VBUS_READY");
-            CHK(usbd_enable(ctx));
+            enable_usb(ctx);
             break;
         case USBD_MSG_VBUS_REMOVED:
             LOG_INF("USBD_MSG_VBUS_REMOVED");
@@ -1823,8 +1836,8 @@ static bool initialize_usb() {
         return false;
     }
 
-    if (!usbd_can_detect_vbus(&context)) {
-        if (!CHK(usbd_enable(&context))) {
+    if (!usbd_can_detect_vbus(&context) || vbus_present_unreported()) {
+        if (!enable_usb(&context)) {
             return false;
         }
     }
