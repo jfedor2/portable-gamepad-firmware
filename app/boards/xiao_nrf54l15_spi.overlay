@@ -1,0 +1,9 @@
+// Since NCS 3.4 the SPIM driver runtime-suspends after every transfer, and with
+// CONFIG_PINCTRL_KEEP_SLEEP_STATE that puts the SPI pins in their low-power
+// (disconnected) sleep state between transfers. The MCP23S17 expander doesn't
+// work like that, so keep the SPI bus awake.
+/ {
+    zephyr,user {
+        keep-awake-devices = <&xiao_spi>;
+    };
+};

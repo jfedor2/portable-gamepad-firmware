@@ -119,7 +119,8 @@
                 "boards/flatbox_rev7.1.conf"
             ],
             "EXTRA_DTC_OVERLAY_FILE": [
-                "boards/flatbox_rev7.1.overlay"
+                "boards/flatbox_rev7.1.overlay",
+                "boards/xiao_nrf54l15_spi.overlay"
             ]
         }
     },
