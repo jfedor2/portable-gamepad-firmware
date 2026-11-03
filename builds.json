@@ -490,7 +490,7 @@
     {
         "name": "pico2",
         "sdk": "zephyr",
-        "board": "rpi_pico2/rp2350a/m33",
+        "board": "rpi_pico2/rp2350a/m33_0",
         "artifact_built_name": "zephyr/zephyr.uf2",
         "extra_params": {
             "EXTRA_CONF_FILE": [
@@ -505,7 +505,7 @@
     {
         "name": "xiao_rp2350",
         "sdk": "zephyr",
-        "board": "rpi_pico2/rp2350a/m33",
+        "board": "rpi_pico2/rp2350a/m33_0",
         "artifact_built_name": "zephyr/zephyr.uf2",
         "extra_params": {
             "EXTRA_CONF_FILE": [
@@ -521,7 +521,7 @@
     {
         "name": "flatbox_rev8",
         "sdk": "zephyr",
-        "board": "rpi_pico2/rp2350a/m33",
+        "board": "rpi_pico2/rp2350a/m33_0",
         "artifact_built_name": "zephyr/zephyr.uf2",
         "extra_params": {
             "EXTRA_CONF_FILE": [
@@ -581,7 +581,7 @@
     },
     {
         "name": "xiao_esp32s3",
-        "sdk": "zephyr-prerelease",
+        "sdk": "zephyr",
         "extra_setup": [
             "west blobs fetch hal_espressif"
         ],
@@ -600,7 +600,7 @@
     },
     {
         "name": "xiao_esp32s3-analog",
-        "sdk": "zephyr-prerelease",
+        "sdk": "zephyr",
         "extra_setup": [
             "west blobs fetch hal_espressif"
         ],
@@ -620,7 +620,7 @@
     },
     {
         "name": "flatbox_rev7-esp32s3",
-        "sdk": "zephyr-prerelease",
+        "sdk": "zephyr",
         "extra_setup": [
             "west blobs fetch hal_espressif"
         ],
@@ -640,7 +640,7 @@
     },
     {
         "name": "flatbox_rev7.1-esp32s3",
-        "sdk": "zephyr-prerelease",
+        "sdk": "zephyr",
         "extra_setup": [
             "west blobs fetch hal_espressif"
         ],
@@ -770,7 +770,7 @@
     },
     {
         "name": "flatbox_rev7.2-esp32s3",
-        "sdk": "zephyr-prerelease",
+        "sdk": "zephyr",
         "extra_setup": [
             "west blobs fetch hal_espressif"
         ],
@@ -825,7 +825,7 @@
     },
     {
         "name": "xiao_esp32c3",
-        "sdk": "zephyr-prerelease",
+        "sdk": "zephyr",
         "extra_setup": [
             "west blobs fetch hal_espressif"
         ],
@@ -842,7 +842,7 @@
     },
     {
         "name": "xiao_esp32c6",
-        "sdk": "zephyr-prerelease",
+        "sdk": "zephyr",
         "extra_setup": [
             "west blobs fetch hal_espressif"
         ],

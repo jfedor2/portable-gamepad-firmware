@@ -1631,9 +1631,16 @@ static const struct usb_desc_header* xusb_fs_desc[] = {
     NULL,
 };
 
+// Zephyr made get_desc return a const pointer in v4.5.0.
+#if KERNEL_VERSION_NUMBER < ZEPHYR_VERSION(4, 5, 0)
 static void* xusb_get_desc(struct usbd_class_data* const c_data, const enum usbd_speed speed) {
     return (void*) xusb_fs_desc;
 }
+#else
+static const void* xusb_get_desc(struct usbd_class_data* const c_data, const enum usbd_speed speed) {
+    return xusb_fs_desc;
+}
+#endif
 
 static int xusb_request(struct usbd_class_data* const c_data, struct net_buf* buf, int err) {
     struct udc_buf_info* bi = udc_get_buf_info(buf);
