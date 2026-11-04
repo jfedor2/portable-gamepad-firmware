@@ -789,6 +789,38 @@
         }
     },
     {
+        "name": "flatbox_rev7.2-rp2040",
+        "sdk": "zephyr",
+        "board": "xiao_rp2040",
+        "artifact_built_name": "zephyr/zephyr.uf2",
+        "extra_params": {
+            "EXTRA_CONF_FILE": [
+                "boards/usb.conf",
+                "boards/flatbox_rev7.2.conf"
+            ],
+            "EXTRA_DTC_OVERLAY_FILE": [
+                "boards/hid_dev.overlay",
+                "boards/flatbox_rev7.2.overlay"
+            ]
+        }
+    },
+    {
+        "name": "flatbox_rev7.2-samd21",
+        "sdk": "zephyr",
+        "board": "seeeduino_xiao",
+        "artifact_built_name": "zephyr/zephyr.uf2",
+        "extra_params": {
+            "EXTRA_CONF_FILE": [
+                "boards/usb.conf",
+                "boards/flatbox_rev7.2.conf"
+            ],
+            "EXTRA_DTC_OVERLAY_FILE": [
+                "boards/hid_dev.overlay",
+                "boards/flatbox_rev7.2.overlay"
+            ]
+        }
+    },
+    {
         "name": "xiao_mg24",
         "sdk": "zephyr",
         "extra_setup": [
